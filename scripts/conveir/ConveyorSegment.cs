@@ -8,6 +8,7 @@ public class ConveyorSegment : MonoBehaviour
 {
     public Transform waypoint; // Целевая точка для текущего сегмента
     public ConveyorSegment nextSegment; // Следующий сегмент конвейера
+    [SerializeField] Transform[] nextPoints;
 
     [SerializeField] private float speed = 0.5f; // Скорость движения объектов
 
@@ -77,6 +78,8 @@ public class ConveyorSegment : MonoBehaviour
 
     public void SetNextSegment(ConveyorSegment newNextSegment)
     {
+        print("New next segment recived");
+        print(newNextSegment.gameObject.name);
         nextSegment = newNextSegment;
 
         if (nextSegment != null)
@@ -114,5 +117,10 @@ public class ConveyorSegment : MonoBehaviour
 
         Gizmos.DrawLine(to, to - right * arrowSize);
         Gizmos.DrawLine(to, to - left * arrowSize);
+    }
+
+    public Transform[] GetNextPoints()
+    {
+        return nextPoints;
     }
 }

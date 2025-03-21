@@ -1,40 +1,44 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Building : MonoBehaviour
 {
-    public GameObject[] buildablePrefabs; // Массив префабов для строительства
-    public LayerMask buildableSurface; // Слой, на котором можно строить
-    public float maxBuildDistance = 100f; // Максимальная дистанция для строительства
-    public float rotationSpeed = 100f; // Скорость поворота объекта
+    public GameObject[] buildablePrefabs;
+    public LayerMask buildableSurface;
+    public float maxBuildDistance = 100f;
+    public float rotationSpeed = 100f;
 
-    public GameObject buildingPanel; // Панель с кнопками для выбора объектов
-    public Button[] buildButtons; // Кнопки для выбора объектов
+    public GameObject buildingPanel;
+    public Button[] buildButtons;
 
-    public Material previewMaterial; // Полупрозрачный синий материал
-    public Material invalidMaterial; // Полупрозрачный красный материал
+    public Material previewMaterial;
+    public Material invalidMaterial;
 
-    private int selectedPrefabIndex = -1; // Индекс выбранного префаба
-    private GameObject previewObject; // Префаб для предпросмотра
-    private int placedObjectsCount = 0; // Счётчик объектов с тэгом "Placed"
+    private int selectedPrefabIndex = -1;
+    private GameObject previewObject;
+    private int placedObjectsCount = 0;
 
-    [SerializeField] Input_manager input; // Ссылка на Input_manager
-    [SerializeField] Movement playerMovement; // Ссылка на скрипт Movement
+    [SerializeField] Input_manager input;
+    [SerializeField] Movement playerMovement;
 
-    float rPressedTime = 0f;
+    private float rPressedTime = 0f;
+
+    // Новая переменная для точек конвейера
+    private Transform[] conveyorPoints;
+    private int currentPointIndex = 0;
+
+    private bool wasRotationPressed = false; // Флаг для отслеживания предыдущего состояния
 
     void Start()
     {
-        // Скрываем панель при старте
         buildingPanel.SetActive(false);
 
-        // Назначаем обработчики для кнопок и обновляем изображения
         for (int i = 0; i < buildButtons.Length; i++)
         {
-            int index = i; // Локальная переменная для замыкания
+            int index = i;
             buildButtons[i].onClick.AddListener(() => SelectPrefab(index));
 
-            // Обновляем изображение на кнопке
             if (buildablePrefabs[index].GetComponent<Image>() != null)
             {
                 Image buttonImage = buildButtons[i].GetComponent<Image>();
@@ -44,7 +48,6 @@ public class Building : MonoBehaviour
                 }
             }
 
-            // Обновляем текст кнопки
             if (buildButtons[i].transform.childCount > 0)
             {
                 Text buttonText = buildButtons[i].transform.GetChild(0).GetComponent<Text>();
@@ -73,30 +76,27 @@ public class Building : MonoBehaviour
 
         if (input.GetBuildingMode())
         {
-
             buildingPanel.SetActive(true);
-            Cursor.lockState = CursorLockMode.None; // Разблокируем курсор
+            Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            playerMovement.lockCamera = true; // Блокируем камеру
+            playerMovement.lockCamera = true;
         }
         else
         {
             buildingPanel.SetActive(false);
-            Cursor.lockState = CursorLockMode.Locked; // Блокируем курсор
+            Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            playerMovement.lockCamera = false; // Разблокируем камеру
+            playerMovement.lockCamera = false;
         }
 
-        // Если выбран объект, показываем предпросмотр
         if (selectedPrefabIndex != -1)
         {
             HandleBuilding();
 
-            // Поворачиваем объект, если зажата клавиша R
             if (input.GetRotation())
             {
                 rPressedTime += Time.deltaTime;
-                if (rPressedTime > 0.3f)
+                if (rPressedTime > 0.2f)
                 {
                     playerMovement.lockCamera = true;
                     RotatePreviewObject();
@@ -127,39 +127,115 @@ public class Building : MonoBehaviour
 
     void SelectPrefab(int index)
     {
-        // Выбираем префаб
         selectedPrefabIndex = index;
 
-        // Скрываем панель
         input.SetBuildingMode(false);
         buildingPanel.SetActive(false);
 
-        // Блокируем курсор и разблокируем камеру
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         playerMovement.lockCamera = false;
 
-        // Создаем объект для предпросмотра
         if (previewObject != null)
         {
             Destroy(previewObject);
         }
         previewObject = Instantiate(buildablePrefabs[selectedPrefabIndex]);
 
-        // Применяем полупрозрачный синий материал к объекту предпросмотра
-        ApplyPreviewMaterial(previewObject, previewMaterial);
+        PreviewMaterial(previewObject, previewMaterial);
 
-        // Отключаем коллайдеры у дочерних объектов превью-объекта
         SetCollidersEnabled(previewObject, false);
 
-        // Включаем триггер у родительского объекта
         SetTriggerEnabled(previewObject, true);
 
-        // Добавляем скрипт для отслеживания коллизий
         AddCollisionScriptToPreview();
+
     }
 
     private void HandleBuilding()
+    {
+        if (selectedPrefabIndex == 1)
+        {
+            // Для конвейеров
+            HandleConveyorBuilding();
+        }
+        else
+        {
+            // Для других объектов
+            HandleGeneralBuilding();
+        }
+    }
+
+    private void HandleConveyorBuilding()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, maxBuildDistance);
+        RaycastHit? conveyorHit = null; // Для хранения попадания на конвейер
+        RaycastHit? groundHit = null; // Для хранения попадания на землю
+
+        // Проверяем, на что направлен луч
+        foreach (var hit in hits)
+        {
+            // Если находим объект с скриптом ConveyorSegment, запоминаем его
+            if (hit.collider.GetComponent<ConveyorSegment>() != null)
+            {
+                conveyorHit = hit;
+            }
+            // Если попали в землю (проверяем слой Ground), запоминаем это
+            else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground"))
+            {
+                groundHit = hit;
+            }
+        }
+
+        // Проверяем, что мы попали на конвейер
+        if (conveyorHit.HasValue && previewObject != null)
+        {
+            RaycastHit hit = conveyorHit.Value;
+
+            float height = previewObject.transform.localScale.y / 2;
+            Vector3 position = hit.point + Vector3.up * height;
+
+
+            ConveyorSegment oldConveuor = hit.collider.GetComponent<ConveyorSegment>();
+            UpdateConveyorPosition(oldConveuor);
+
+            // Применяем материал для разрешенного размещения
+            PreviewMaterial(previewObject, placedObjectsCount > 0 ? invalidMaterial : previewMaterial);
+
+            // Размещение объекта при клике
+            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0)
+            {
+                PlaceConveyor(previewObject.transform.position, previewObject.transform.rotation, oldConveuor);
+            }
+        }
+        else if (groundHit.HasValue && previewObject != null)
+        {
+            // Если не смотрим на конвейер, но смотрим на землю, показываем preview на земле
+            RaycastHit hit = groundHit.Value;
+
+            float height = previewObject.transform.localScale.y / 2;
+            Vector3 position = hit.point + Vector3.up * height;
+
+            // Обновляем позицию конвейера
+            previewObject.transform.position = position;
+
+            // Применяем материал, который показывает, что объект нельзя разместить
+            PreviewMaterial(previewObject, invalidMaterial);
+        }
+        else
+        {
+            // Если не смотрим на землю или конвейер, просто показываем объект в обычной позиции
+            previewObject.transform.position = Camera.main.transform.position + Camera.main.transform.forward * maxBuildDistance;
+
+            // Применяем материал, который показывает, что объект нельзя разместить
+            PreviewMaterial(previewObject, invalidMaterial);
+        }
+    }
+
+    private void HandleGeneralBuilding()
     {
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
@@ -167,8 +243,10 @@ public class Building : MonoBehaviour
         RaycastHit[] hits = Physics.RaycastAll(ray, maxBuildDistance);
         RaycastHit? buildableHit = null;
 
+        // Проверяем, на что направлен луч
         foreach (var hit in hits)
         {
+            // Проверка на наличие скрипта ConveyorSegment на объекте или на слой "Buildable"
             if (hit.collider.CompareTag("Buildable"))
             {
                 buildableHit = hit;
@@ -182,66 +260,88 @@ public class Building : MonoBehaviour
             float height = previewObject.transform.localScale.y / 2;
             Vector3 position = hit.point + Vector3.up * height;
 
-            // Если зажат Alt — округляем координаты
+            // Если нажаты клавиши Alt, округляем позицию
             if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
             {
-                position.x = Mathf.Round(position.x / 0.25f) * 0.25f;
-                position.y = Mathf.Round(position.y / 0.25f) * 0.25f;
-                position.z = Mathf.Round(position.z / 0.25f) * 0.25f;
+                position.x = Mathf.Round(position.x);
+                position.y = Mathf.Round(position.y);
+                position.z = Mathf.Round(position.z);
             }
 
+            // Обновляем позицию стандартным способом
             previewObject.transform.position = position;
 
-            ApplyPreviewMaterial(previewObject, placedObjectsCount > 0 ? invalidMaterial : previewMaterial);
+            // Применяем материал в зависимости от состояния (можно ли разместить объект)
+            PreviewMaterial(previewObject, placedObjectsCount > 0 ? invalidMaterial : previewMaterial);
 
+            // Размещение объекта при клике
             if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0)
             {
-                PlaceObject(position, previewObject.transform.rotation);
+                PlaceObject(previewObject.transform.position, previewObject.transform.rotation);
             }
         }
     }
+    void PlaceConveyor(Vector3 position, Quaternion rotation, ConveyorSegment conveyorSegment)
+    {
+        GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
+        placedObject.tag = "Placed";
+        SetCollidersEnabled(placedObject, true);
+        RemoveCollisionScriptFromObject(placedObject);
+
+        Transform roadTransform = placedObject.transform.Find("road");
+
+        if (roadTransform != null)
+        {
+            // Теперь roadTransform указывает на дочерний объект с именем "road"
+            ConveyorSegment cs = roadTransform.GetComponent<ConveyorSegment>();
+            switch (currentPointIndex)
+            {
+                case 0:
+                    conveyorSegment.SetNextSegment(cs);
+                    break;
+                case 1:
+                    cs.SetNextSegment(conveyorSegment);
+                    break;
+                case 2:
+                    cs.SetNextSegment(conveyorSegment);
+                    break;
+                case 3:
+                    cs.SetNextSegment(conveyorSegment);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Объект с именем 'road' не найден среди дочерних объектов.");
+        }
+        print("send");
+    }
+
 
     void PlaceObject(Vector3 position, Quaternion rotation)
     {
-        // Создаем объект в мире
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
-
-        // Присваиваем объекту тэг "Placed"
         placedObject.tag = "Placed";
-
-        // Включаем коллайдеры у дочерних объектов
         SetCollidersEnabled(placedObject, true);
-
-        // Удаляем скрипт для отслеживания коллизий
         RemoveCollisionScriptFromObject(placedObject);
-
-        // Сбрасываем выбранный префаб
-        //selectedPrefabIndex = -1;
-
-        // Уничтожаем объект предпросмотра
-        //if (previewObject != null)
-        //{
-        //    Destroy(previewObject);
-        //}
     }
 
-    // Включает или отключает коллайдеры у объекта и всех его дочерних объектов
     void SetCollidersEnabled(GameObject obj, bool isEnabled)
     {
         Collider collider = obj.GetComponent<Collider>();
-        if (collider != null && !collider.isTrigger) // Игнорируем триггеры
+        if (collider != null && !collider.isTrigger)
         {
             collider.enabled = isEnabled;
         }
 
-        // Рекурсивно обрабатываем дочерние объекты
         foreach (Transform child in obj.transform)
         {
             SetCollidersEnabled(child.gameObject, isEnabled);
         }
     }
 
-    // Включает или отключает триггер у родительского объекта
     void SetTriggerEnabled(GameObject obj, bool isEnabled)
     {
         Collider triggerCollider = obj.GetComponent<Collider>();
@@ -251,8 +351,7 @@ public class Building : MonoBehaviour
         }
     }
 
-    // Применяет материал к объекту и всем его дочерним объектам
-    void ApplyPreviewMaterial(GameObject obj, Material material)
+    void PreviewMaterial(GameObject obj, Material material)
     {
         Renderer renderer = obj.GetComponent<Renderer>();
         if (renderer != null)
@@ -260,26 +359,72 @@ public class Building : MonoBehaviour
             renderer.material = material;
         }
 
-        // Рекурсивно обрабатываем дочерние объекты
         foreach (Transform child in obj.transform)
         {
-            ApplyPreviewMaterial(child.gameObject, material);
+            PreviewMaterial(child.gameObject, material);
         }
     }
 
-    // Увеличивает счётчик объектов с тэгом "Placed"
+    private void UpdateConveyorPosition(ConveyorSegment conveyorSegment)
+    {
+        // Получаем точки конвейера
+        conveyorPoints = conveyorSegment.GetNextPoints();
+
+        if (conveyorPoints.Length > 0)
+        {
+            // Получаем позицию следующей точки
+            previewObject.transform.position = conveyorPoints[currentPointIndex].position;
+
+            // Получаем поворот текущего сегмента
+            Quaternion currentSegmentRotation = conveyorSegment.transform.rotation;
+
+            // Применяем поворот относительно текущего сегмента
+            if (currentPointIndex == 2 || currentPointIndex == 3)
+            {
+                previewObject.transform.rotation = currentSegmentRotation * Quaternion.Euler(0f, 90f, 0f);
+            }
+            else
+            {
+                if (input.GetRotation()) // Если нажата клавиша для поворота
+                {
+                    // Отслеживаем прокрутку колеса мыши
+                    float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+
+                    if (scrollInput != 0f) // Если прокрутка колесика мыши есть
+                    {
+                        // Поворот объекта на 90 градусов
+                        previewObject.transform.Rotate(0f, 90f * Mathf.Sign(scrollInput), 0f, Space.Self);
+                    }
+                }
+                else
+                {
+                    previewObject.transform.rotation = currentSegmentRotation * Quaternion.Euler(0f, 0f, 0f);
+                }
+            }
+        }
+
+        // Логика для прокрутки колесика мыши
+        if (!input.GetRotation() && Input.GetAxis("Mouse ScrollWheel") > 0f) // Прокрутка колесика вверх
+        {
+            currentPointIndex = (currentPointIndex + 1) % conveyorPoints.Length;
+        }
+        else if (!input.GetRotation() && Input.GetAxis("Mouse ScrollWheel") < 0f) // Прокрутка колесика вниз
+        {
+            currentPointIndex = (currentPointIndex - 1 + conveyorPoints.Length) % conveyorPoints.Length;
+        }
+    }
+
+
     public void IncrementPlacedObjectsCount()
     {
         placedObjectsCount++;
     }
 
-    // Уменьшает счётчик объектов с тэгом "Placed"
     public void DecrementPlacedObjectsCount()
     {
         placedObjectsCount--;
     }
 
-    // Добавляет скрипт для отслеживания коллизий на превью-объект
     private void AddCollisionScriptToPreview()
     {
         if (previewObject != null)
@@ -289,7 +434,6 @@ public class Building : MonoBehaviour
         }
     }
 
-    // Удаляет скрипт для отслеживания коллизий с объекта
     private void RemoveCollisionScriptFromObject(GameObject obj)
     {
         PreviewObjectCollision collisionScript = obj.GetComponent<PreviewObjectCollision>();
@@ -299,10 +443,9 @@ public class Building : MonoBehaviour
         }
     }
 
-    // Поворачивает превью-объект при зажатии клавиши R и движении мыши
     private void RotatePreviewObject()
     {
-        if (previewObject != null) 
+        if (previewObject != null && selectedPrefabIndex != 1)
         {
             if (rPressedTime > 0.3f)
             {
@@ -312,3 +455,5 @@ public class Building : MonoBehaviour
         }
     }
 }
+
+
