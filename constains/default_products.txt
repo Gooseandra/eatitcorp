@@ -1,0 +1,40 @@
+{
+	[
+		{
+        	"name": "carrot",
+			"id": 1
+		}
+		{
+			"name": "cucumber"
+			"id": 2
+		}
+		{
+			"name": "potato"
+			"id": 3 
+		}
+		{
+			"name": "tomato"
+			"id": 4
+		}
+		{
+			"name": "cabbage"
+			"id":5
+		}
+		{
+			"name": "pepper"
+			"id": 6
+		}
+		{
+			"name": "pork"
+			"id": 7
+		}
+		{
+			"name": "chicken"
+			"id": 8
+		}
+			{
+			"name": "beef"
+			"id": 9
+		}
+	]
+}
