@@ -316,7 +316,6 @@ public class Building : MonoBehaviour
         {
             Debug.LogWarning("Объект с именем 'road' не найден среди дочерних объектов.");
         }
-        print("send");
     }
 
 
