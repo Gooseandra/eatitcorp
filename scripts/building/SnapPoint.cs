@@ -37,6 +37,7 @@ public class SnapPoint : MonoBehaviour
         if (other.gameObject.layer == conveyorLayer && !isConveyorConnected)
         {
             snapPosition = other.transform.position;
+            Debug.Log("Создание конннектора");
             CreateEntrance(other);
             isConveyorConnected = true; // Устанавливаем флаг, что конвейер подключен
         }

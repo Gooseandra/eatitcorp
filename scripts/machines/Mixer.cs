@@ -1,144 +1,130 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class IngredientData
+{
+    public string Name;
+    public List<string> ContainedIngredients; // Список вложенных ингредиентов
+
+    public IngredientData(string name, List<string> ingredients)
+    {
+        Name = name;
+        ContainedIngredients = new List<string>(ingredients);
+    }
+}
+
 public class Mixer : MonoBehaviour
 {
-    [SerializeField] private GameObject inedibleWaste; // Объект "несъедобные помои"
-    [SerializeField] private Transform spawnPoint; // Точка появления результата
-    [SerializeField] private LayerMask ingredientLayer; // Слой для ингредиентов
+    [SerializeField] private GameObject inedibleWaste;
+    [SerializeField] private Transform spawnPoint;
+    [SerializeField] private int maxIngridientsIn;
 
-    private List<Ingredient> currentIngredients = new List<Ingredient>(); // Текущие ингредиенты в миксере
+    [SerializeField] private IngredientData ingredientAData;
+    [SerializeField] private IngredientData ingredientBData;
+    [SerializeField] private int ingACount = 0;
+    [SerializeField] private int ingBCount = 0;
 
-    // Метод для обработки ингредиента, вызванный из дочернего коннектора
     public void HandleIngredient(Collider other)
     {
-        Debug.Log("ингридиент приехал");
         Ingredient ingredient = other.GetComponent<Ingredient>();
-        if (ingredient != null)
+        if (ingredient != null && CanAddIngridient(ingredient))
         {
-            // Добавляем ингредиент в миксер
-            AddIngredient(ingredient);
-
-            // Уничтожаем объект ингредиента, так как он "поглощается" миксером
+            AddIngridient(ingredient);
             Destroy(other.gameObject);
         }
     }
 
-    // Добавление ингредиента в миксер
-    private void AddIngredient(Ingredient ingredient)
+    private bool CanAddIngridient(Ingredient ingridient)
     {
-        if (currentIngredients.Count < 2) // Миксер может принимать только два ингредиента
-        {
-            currentIngredients.Add(ingredient);
-            Debug.Log($"Добавлен ингредиент: {ingredient.Name}");
+        if (ingredientBData == null || ingridient.name == ingredientBData.Name)
+            return ingBCount < maxIngridientsIn;
+        else if (ingredientAData == null || ingridient.name == ingredientAData.Name)
+            return ingACount < maxIngridientsIn;
+        return false;
+    }
 
-            if (currentIngredients.Count == 2) // Если два ингредиента, начинаем смешивание
-            {
-                MixIngredients();
-            }
-        }
-        else
+    private void AddIngridient(Ingredient ing)
+    {
+        var data = new IngredientData(ing.name, ing.GetIngridients());
+        if (ingredientAData == null || ing.name == ingredientAData.Name)
         {
-            Debug.Log("Миксер переполнен. Сначала смешайте текущие ингредиенты.");
+            ingredientAData = data;
+            ingACount++;
+        }
+        else if (ingredientBData == null || ing.name == ingredientBData.Name)
+        {
+            ingredientBData = data;
+            ingBCount++;
+        }
+        Mix();
+    }
+
+    private void Mix()
+    {
+        if (ingACount > 0 && ingBCount > 0)
+        {
+            List<string> mixedIngredients = new List<string>();
+            mixedIngredients.AddRange(ingredientAData.ContainedIngredients);
+            mixedIngredients.AddRange(ingredientBData.ContainedIngredients);
+            SpawnResult(mixedIngredients);
+            ingACount--;
+            ingBCount--;
         }
     }
 
-    // Смешивание ингредиентов
-    private void MixIngredients()
+    private void SpawnResult(List<string> ingredients)
     {
-        // Получаем список всех вложенных ингредиентов
-        List<string> allIngredients = new List<string>();
-        foreach (var ingredient in currentIngredients)
-        {
-            allIngredients.Add(ingredient.Name);
-            allIngredients.AddRange(ingredient.ContainedIngredients);
-        }
+        string recipeResult = JsonManager.Instance.CheckRecipes(ingredients);
 
-        // Используем RecipeManager для проверки рецептов
-        string result = JsonManager.Instance.CheckRecipes(allIngredients);
+        GameObject resultPrefab = null;
 
-        if (result != null)
+        Debug.Log(recipeResult);
+
+        if (!string.IsNullOrEmpty(recipeResult))
         {
-            if (result == "заготовка")
+            // Если получился полный рецепт
+            if (recipeResult != "Заготовка")
             {
-                Debug.Log("Создана заготовка с ингредиентами: " + string.Join(", ", allIngredients));
-                SpawnPreparation(allIngredients);
+                // Ищем префаб с именем как у рецепта
+                resultPrefab = Resources.Load<GameObject>(recipeResult);
+
+                if (resultPrefab == null)
+                {
+                    Debug.LogWarning($"Префаб для рецепта {recipeResult} не найден в папке Resources");
+                    resultPrefab = inedibleWaste;
+                }
             }
-            else
+            else // Если получилась заготовка
             {
-                Debug.Log($"Результат смешивания: {result}");
-                SpawnResult(result, allIngredients);
+                // Ищем префаб "Заготовка"
+                resultPrefab = Resources.Load<GameObject>("Заготовка");
+
+                if (resultPrefab == null)
+                {
+                    Debug.LogWarning("Префаб 'Заготовка' не найден в папке Resources");
+                    resultPrefab = inedibleWaste;
+                }
             }
         }
-        else
+        else // Если рецепт нарушен
         {
-            Debug.Log("Несъедобные помои!");
-            SpawnResult("несъедобные помои", allIngredients);
+            resultPrefab = inedibleWaste;
         }
 
-        currentIngredients.Clear(); // Очищаем миксер после смешивания
-    }
-
-    // Создание результата с объединённым списком ингредиентов
-    private void SpawnResult(string resultName, List<string> ingredients)
-    {
-        // Создаем новый объект результата
-        GameObject resultObject = new GameObject(resultName);
-        resultObject.transform.position = spawnPoint.position;
-        resultObject.transform.rotation = spawnPoint.rotation;
-
-        // Добавляем компонент Ingredient к объекту результата
-        Ingredient resultIngredient = resultObject.AddComponent<Ingredient>();
-        resultIngredient.Name = resultName;
-
-        // Добавляем все ингредиенты в результат
-        foreach (var ingredient in ingredients)
-        {
-            resultIngredient.AddContainedIngredient(ingredient);
-        }
-
-        // Можно добавить визуальное представление результата (например, префаб)
-        GameObject resultPrefab = Resources.Load<GameObject>(resultName);
+        // Спавним результат
         if (resultPrefab != null)
         {
-            Instantiate(resultPrefab, spawnPoint.position, spawnPoint.rotation);
+            GameObject res = Instantiate(resultPrefab, spawnPoint.position, spawnPoint.rotation);
+            Ingredient ing = res.GetComponent<Ingredient>();
+            ing.SetIngridients(ingredients);
+            ing.SetName(recipeResult);
         }
         else
         {
-            Debug.LogError($"Префаб для {resultName} не найден в папке Resources.");
-            Instantiate(inedibleWaste, spawnPoint.position, spawnPoint.rotation); // Создаем "несъедобные помои"
-        }
-    }
-
-    // Создание заготовки
-    private void SpawnPreparation(List<string> ingredients)
-    {
-        // Создаем заготовку с именем "Заготовка"
-        Ingredient preparation = Ingredient.CreatePreparation(ingredients, "Заготовка");
-
-        // Создаем объект заготовки в мире
-        GameObject preparationObject = new GameObject(preparation.Name);
-        preparationObject.transform.position = spawnPoint.position;
-        preparationObject.transform.rotation = spawnPoint.rotation;
-
-        // Добавляем компонент Ingredient к объекту заготовки
-        Ingredient preparationIngredient = preparationObject.AddComponent<Ingredient>();
-        preparationIngredient.Name = preparation.Name;
-        foreach (var ingredient in preparation.ContainedIngredients)
-        {
-            preparationIngredient.AddContainedIngredient(ingredient);
-        }
-
-        // Можно добавить визуальное представление заготовки (например, префаб)
-        GameObject preparationPrefab = Resources.Load<GameObject>("Preparation");
-        if (preparationPrefab != null)
-        {
-            Instantiate(preparationPrefab, spawnPoint.position, spawnPoint.rotation);
-        }
-        else
-        {
-            Debug.LogError("Префаб для заготовки не найден в папке Resources.");
+            Debug.LogError("Не удалось определить префаб для спавна");
+            Instantiate(inedibleWaste, spawnPoint.position, spawnPoint.rotation);
         }
     }
 }

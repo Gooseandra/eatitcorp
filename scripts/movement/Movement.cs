@@ -18,7 +18,7 @@ public class Movement : MonoBehaviour
     [SerializeField] float _bunnyHopAdditionalSpeed = 2f;
     [SerializeField] float _groundedBunnyHopTime;
     [SerializeField] float _normalCameraHeight = 0.9f;
-    [SerializeField] float _crouchCameraHeight = 0f;
+    //[SerializeField] float _crouchCameraHeight = 0f;
 
     [SerializeField] float _jumpForce = 100f;
     [SerializeField] float mouseSensitivity = 1000f;
