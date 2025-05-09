@@ -25,7 +25,8 @@ public class ItemInteractor : MonoBehaviour
             ItemPickup itemPickup = hit.collider.GetComponent<ItemPickup>();
             if (itemPickup != null)
             {
-                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.icon);
+
+                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.icon, itemPickup.thisPrefab);
                 if (inventory.AddItem(itemCopy))
                 {
                     Destroy(itemPickup.gameObject);

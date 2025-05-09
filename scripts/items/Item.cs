@@ -7,12 +7,14 @@ public class Item
     public int maxStack = 50;
     public int amount;
     public Sprite icon;
+    public GameObject thisPrefab;
 
-    public Item(string name, int amount, Sprite icon)
+    public Item(string name, int amount, Sprite icon, GameObject prefab)
     {
         this.name = name;
         this.amount = amount;
         this.icon = icon;
+        this.thisPrefab = prefab;
     }
 
     public bool CanStack()

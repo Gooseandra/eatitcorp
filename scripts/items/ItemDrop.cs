@@ -1,16 +1,21 @@
 using UnityEngine;
 
-public class ItemDrop : MonoBehaviour
+public class DroppedItem : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public Item item;
+    public int amount;
+
+    private SpriteRenderer spriteRenderer;
+
+    private void Awake()
     {
-        
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Initialize(Item item, int amount)
     {
-        
+        this.item = item;
+        this.amount = amount;
+        spriteRenderer.sprite = item.icon;
     }
 }

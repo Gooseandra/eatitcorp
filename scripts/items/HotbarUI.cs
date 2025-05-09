@@ -81,7 +81,6 @@ public class HotbarUI : MonoBehaviour
         // Обновляем текст количества
         if (slotIndex < slotAmountTexts.Count && slotAmountTexts[slotIndex] != null)
         {
-            Debug.Log(item.amount);
             slotAmountTexts[slotIndex].text = hasItem && item.maxStack > 1 ? item.amount.ToString() : "";
         }
     }
