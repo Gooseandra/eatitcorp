@@ -5,7 +5,7 @@ public class Inventory : MonoBehaviour
 {
     public List<Item> hotbar = new List<Item>();
     public int selectedSlot = 0;
-    // public Transform Player;
+    public Transform Player;
 
 
     bool lastVal = false;
@@ -66,7 +66,7 @@ public class Inventory : MonoBehaviour
         // Добавляем в пустой слот
         for (int i = 0; i < hotbar.Count; i++)
         {
-            if (hotbar[i].thisPrefab == null)
+            if (hotbar[i] == null)
             {
                 hotbar[i] = newItem;
                 return true;
@@ -88,9 +88,10 @@ public class Inventory : MonoBehaviour
             return;
         }
 
-        GameObject newItem = Instantiate(hotbar[selectedSlot].thisPrefab);
-       // Vector3 dropDirection = Player.forward + Vector3.up * 0.3f;
-       // newItem.GetComponent<Rigidbody>().AddForce(dropDirection * 100, ForceMode.Impulse);
+        GameObject newItem = Instantiate(hotbar[selectedSlot].thisPrefab, Player.position, Quaternion.identity);
+        newItem.SetActive(true);
+       Vector3 dropDirection = Player.forward + Vector3.up;
+        newItem.GetComponent<Rigidbody>().AddForce(dropDirection * 0.2f * Time.deltaTime, ForceMode.Impulse);
 
         hotbar[selectedSlot].amount--;
     }

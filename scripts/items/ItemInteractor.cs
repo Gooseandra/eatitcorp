@@ -29,7 +29,7 @@ public class ItemInteractor : MonoBehaviour
                 Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.icon, itemPickup.thisPrefab);
                 if (inventory.AddItem(itemCopy))
                 {
-                    Destroy(itemPickup.gameObject);
+                   itemPickup.gameObject.SetActive(false);
                 }
             }
         }
