@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UIElements;
 
 public class Inventory : MonoBehaviour
 {
@@ -66,7 +67,7 @@ public class Inventory : MonoBehaviour
         // Добавляем в пустой слот
         for (int i = 0; i < hotbar.Count; i++)
         {
-            if (hotbar[i] == null)
+            if (hotbar[i] == null || hotbar[i].thisPrefab == null)
             {
                 hotbar[i] = newItem;
                 return true;
@@ -90,10 +91,33 @@ public class Inventory : MonoBehaviour
 
         GameObject newItem = Instantiate(hotbar[selectedSlot].thisPrefab, Player.position, Quaternion.identity);
         newItem.SetActive(true);
-       Vector3 dropDirection = Player.forward + Vector3.up;
-        newItem.GetComponent<Rigidbody>().AddForce(dropDirection * 0.2f * Time.deltaTime, ForceMode.Impulse);
+        Vector3 dropDirection = Player.forward + Vector3.up;
+        Rigidbody rb = newItem.GetComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+        rb.AddForce(dropDirection * 0.2f * Time.deltaTime, ForceMode.Impulse);
 
         hotbar[selectedSlot].amount--;
     }
 
+    public int FindByBuildingIndex(int index)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            if (hotbar[i] != null && hotbar[i].thisPrefab != null && hotbar[i].buildingIndex == index)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int GetCountByIndex(int index)
+    {
+        return hotbar[index].amount;
+    }
+
+    public void RemoveByIndex(int index)
+    {
+        hotbar[index].amount--;
+    }
 }

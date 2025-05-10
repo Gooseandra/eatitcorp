@@ -187,5 +187,6 @@ MonoBehaviour:
     amount: 1
     icon: {fileID: -925689059, guid: dcd549bc03408a64794c10f7ab4c2f09, type: 3}
     thisPrefab: {fileID: 7400819867914681741}
+    buildingIndex: -1
   amount: 1
   thisPrefab: {fileID: 7400819867914681741}

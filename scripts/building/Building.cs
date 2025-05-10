@@ -27,6 +27,9 @@ public class Building : MonoBehaviour
     // Новая переменная для точек конвейера
     private Transform[] conveyorPoints;
     private int currentPointIndex = 0;
+    [SerializeField] UIManager ManagerUI;
+
+    public Inventory inventory;
 
     private bool wasRotationPressed = false; // Флаг для отслеживания предыдущего состояния
 
@@ -127,6 +130,14 @@ public class Building : MonoBehaviour
 
     void SelectPrefab(int index)
     {
+        // Проверяем наличие материалов перед созданием preview
+        int hotbarIndex = inventory.FindByBuildingIndex(index);
+        if (hotbarIndex == -1 || inventory.GetCountByIndex(hotbarIndex) <= 0)
+        {
+            ManagerUI.ShowNotEnoughMaterialMessage();
+            return;
+        }
+
         selectedPrefabIndex = index;
 
         input.SetBuildingMode(false);
@@ -140,75 +151,85 @@ public class Building : MonoBehaviour
         {
             Destroy(previewObject);
         }
+
         previewObject = Instantiate(buildablePrefabs[selectedPrefabIndex]);
 
+        // Отключаем ВСЕ коллайдеры (обычные и триггеры)
+        SetAllCollidersEnabled(previewObject, false);
+
+        // Применяем preview material
         PreviewMaterial(previewObject, previewMaterial);
 
-        SetCollidersEnabled(previewObject, false);
-
-        SetTriggerEnabled(previewObject, true);
-
+        // Добавляем скрипт для обработки коллизий (если нужен)
         AddCollisionScriptToPreview();
-
     }
 
     private void HandleBuilding()
     {
+        // Проверяем наличие материалов перед строительством
+        int hotbarIndex = inventory.FindByBuildingIndex(selectedPrefabIndex);
+        if (hotbarIndex == -1)
+        {
+            // Если материалы закончились - уничтожаем preview
+            DestroyPreviewObject();
+            return;
+        }
+
+        int materialsAmount = inventory.GetCountByIndex(hotbarIndex);
+        if (materialsAmount <= 0)
+        {
+            // Если материалы закончились - уничтожаем preview
+            DestroyPreviewObject();
+            return;
+        }
+
+        // Применяем материал preview
+        PreviewMaterial(previewObject, previewMaterial);
+
         if (selectedPrefabIndex == 1)
         {
-            // Для конвейеров
-            HandleConveyorBuilding();
+            HandleConveyorBuilding(hotbarIndex, materialsAmount);
         }
         else
         {
-            // Для других объектов
-            HandleGeneralBuilding();
+            HandleGeneralBuilding(hotbarIndex, materialsAmount);
         }
     }
 
-    private void HandleConveyorBuilding()
+    private void HandleConveyorBuilding(int hotbarIndex, int materialsAmount)
     {
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
 
         RaycastHit[] hits = Physics.RaycastAll(ray, maxBuildDistance);
-        RaycastHit? conveyorHit = null; // Для хранения попадания на конвейер
-        RaycastHit? groundHit = null; // Для хранения попадания на землю
+        RaycastHit? conveyorHit = null;
+        RaycastHit? groundHit = null;
 
-        // Проверяем, на что направлен луч
         foreach (var hit in hits)
         {
-            // Если находим объект с скриптом ConveyorSegment, запоминаем его
             if (hit.collider.GetComponent<ConveyorSegment>() != null)
             {
                 conveyorHit = hit;
             }
-            // Если попали в землю (проверяем слой Ground), запоминаем это
             else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
                 groundHit = hit;
             }
         }
 
-        // Проверяем, что мы попали на конвейер
         if (conveyorHit.HasValue && previewObject != null)
         {
             RaycastHit hit = conveyorHit.Value;
-
             float height = previewObject.transform.localScale.y / 2;
             Vector3 position = hit.point + Vector3.up * height;
-
 
             ConveyorSegment oldConveuor = hit.collider.GetComponent<ConveyorSegment>();
             UpdateConveyorPosition(oldConveuor);
 
-            // Применяем материал для разрешенного размещения
-            PreviewMaterial(previewObject, placedObjectsCount > 0 ? invalidMaterial : previewMaterial);
-
-            // Размещение объекта при клике
-            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0)
+            // Размещение объекта только если есть материалы
+            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
             {
-                PlaceConveyor(previewObject.transform.position, previewObject.transform.rotation, oldConveuor);
+                PlaceConveyor(previewObject.transform.position, previewObject.transform.rotation, oldConveuor, hotbarIndex);
             }
         }
         else if (groundHit.HasValue && previewObject != null)
@@ -235,7 +256,7 @@ public class Building : MonoBehaviour
         }
     }
 
-    private void HandleGeneralBuilding()
+    private void HandleGeneralBuilding(int hotbarIndex, int materialsAmount)
     {
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
@@ -243,10 +264,8 @@ public class Building : MonoBehaviour
         RaycastHit[] hits = Physics.RaycastAll(ray, maxBuildDistance);
         RaycastHit? buildableHit = null;
 
-        // Проверяем, на что направлен луч
         foreach (var hit in hits)
         {
-            // Проверка на наличие скрипта ConveyorSegment на объекте или на слой "Buildable"
             if (hit.collider.CompareTag("Buildable"))
             {
                 buildableHit = hit;
@@ -260,7 +279,6 @@ public class Building : MonoBehaviour
             float height = previewObject.transform.localScale.y / 2;
             Vector3 position = hit.point + Vector3.up * height;
 
-            // Если нажаты клавиши Alt, округляем позицию
             if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
             {
                 position.x = Mathf.Round(position.x);
@@ -268,24 +286,20 @@ public class Building : MonoBehaviour
                 position.z = Mathf.Round(position.z);
             }
 
-            // Обновляем позицию стандартным способом
             previewObject.transform.position = position;
 
-            // Применяем материал в зависимости от состояния (можно ли разместить объект)
-            PreviewMaterial(previewObject, placedObjectsCount > 0 ? invalidMaterial : previewMaterial);
-
-            // Размещение объекта при клике
-            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0)
+            // Размещение объекта только если есть материалы
+            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
             {
-                PlaceObject(previewObject.transform.position, previewObject.transform.rotation);
+                PlaceObject(previewObject.transform.position, previewObject.transform.rotation, hotbarIndex);
             }
         }
     }
-    void PlaceConveyor(Vector3 position, Quaternion rotation, ConveyorSegment conveyorSegment)
+    void PlaceConveyor(Vector3 position, Quaternion rotation, ConveyorSegment conveyorSegment, int hotbarIndex)
     {
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
         placedObject.tag = "Placed";
-        SetCollidersEnabled(placedObject, true);
+        SetAllCollidersEnabled(placedObject, true);
         RemoveCollisionScriptFromObject(placedObject);
 
         Transform roadTransform = placedObject.transform.Find("road");
@@ -311,6 +325,11 @@ public class Building : MonoBehaviour
                 default:
                     break;
             }
+            inventory.RemoveByIndex(hotbarIndex);
+            SetAllCollidersEnabled(placedObject, true);
+            SetTriggerEnabled(placedObject, false);
+
+            // Возвращаем стандартные материалы
         }
         else
         {
@@ -319,25 +338,26 @@ public class Building : MonoBehaviour
     }
 
 
-    void PlaceObject(Vector3 position, Quaternion rotation)
+    void PlaceObject(Vector3 position, Quaternion rotation, int hotbarIndex)
     {
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
         placedObject.tag = "Placed";
-        SetCollidersEnabled(placedObject, true);
-        RemoveCollisionScriptFromObject(placedObject);
+
+        // Включаем только обычные коллайдеры (триггеры остаются выключенными)
+        SetAllCollidersEnabled(placedObject, true); // Обычные коллайдеры
+        SetTriggerEnabled(placedObject, false);  // Триггеры (если не нужны)
+
+        // Возвращаем стандартные материалы (убираем preview)
+
+        inventory.RemoveByIndex(hotbarIndex);
     }
 
-    void SetCollidersEnabled(GameObject obj, bool isEnabled)
+    void SetAllCollidersEnabled(GameObject obj, bool isEnabled)
     {
-        Collider collider = obj.GetComponent<Collider>();
-        if (collider != null && !collider.isTrigger)
+        Collider[] colliders = obj.GetComponentsInChildren<Collider>(true);
+        foreach (Collider collider in colliders)
         {
             collider.enabled = isEnabled;
-        }
-
-        foreach (Transform child in obj.transform)
-        {
-            SetCollidersEnabled(child.gameObject, isEnabled);
         }
     }
 
