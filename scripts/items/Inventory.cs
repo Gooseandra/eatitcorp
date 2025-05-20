@@ -51,6 +51,7 @@ public class Inventory : MonoBehaviour
                 {
                     hotbar[i].amount += newItem.amount;
                     hotbar[i].thisPrefab = newItem.thisPrefab;
+                    hotbar[i].buildingIndex = newItem.buildingIndex;
                     Debug.Log(newItem.thisPrefab);
                     Debug.Log(hotbar[i].thisPrefab);
                     return true;
@@ -101,7 +102,7 @@ public class Inventory : MonoBehaviour
 
     public int FindByBuildingIndex(int index)
     {
-        for (int i = 0; i < 10; i++)
+        for (   int i = 0; i < 10; i++)
         {
             if (hotbar[i] != null && hotbar[i].thisPrefab != null && hotbar[i].buildingIndex == index)
             {

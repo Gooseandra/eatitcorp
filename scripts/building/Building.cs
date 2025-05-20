@@ -31,7 +31,7 @@ public class Building : MonoBehaviour
 
     public Inventory inventory;
 
-    private bool wasRotationPressed = false; // Флаг для отслеживания предыдущего состояния
+    private bool lastBuildingMode = false;
 
     void Start()
     {
@@ -77,20 +77,25 @@ public class Building : MonoBehaviour
             }
         }
 
-        if (input.GetBuildingMode())
+        if (input.GetBuildingMode() != lastBuildingMode)
         {
-            buildingPanel.SetActive(true);
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            playerMovement.lockCamera = true;
+
+            if (input.GetBuildingMode())
+            {
+                buildingPanel.SetActive(true);
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                playerMovement.lockCamera = true;
+            }
+            else
+            {
+                buildingPanel.SetActive(false);
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                playerMovement.lockCamera = false;
+            }
         }
-        else
-        {
-            buildingPanel.SetActive(false);
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            playerMovement.lockCamera = false;
-        }
+        lastBuildingMode = input.GetBuildingMode();
 
         if (selectedPrefabIndex != -1)
         {

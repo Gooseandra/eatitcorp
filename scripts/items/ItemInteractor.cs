@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 
 public class ItemInteractor : MonoBehaviour
@@ -25,7 +26,7 @@ public class ItemInteractor : MonoBehaviour
             ItemPickup itemPickup = hit.collider.GetComponent<ItemPickup>();
             if (itemPickup != null)
             {
-                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.icon, itemPickup.thisPrefab);
+                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.icon, itemPickup.thisPrefab, itemPickup.item.buildingIndex);
                 bool success = inventory.AddItem(itemCopy);
                 Debug.Log(success);
                 if (success)

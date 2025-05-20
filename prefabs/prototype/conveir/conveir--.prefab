@@ -123,6 +123,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   waypoint: {fileID: 3772991392734215450}
   nextSegment: {fileID: 0}
+  nextPoints: []
   speed: 2
 --- !u!1 &4245155132689927547
 GameObject:
@@ -152,8 +153,8 @@ Transform:
   m_GameObject: {fileID: 4245155132689927547}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.45000005}
-  m_LocalScale: {x: 1, y: 0.1, z: 0.10387}
+  m_LocalPosition: {x: -0.0071, y: 0, z: 0.45000005}
+  m_LocalScale: {x: 1.0142, y: 0.1, z: 0.10387}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5893268850012962885}
@@ -291,8 +292,8 @@ Transform:
   m_GameObject: {fileID: 7000668653387416143}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.444}
-  m_LocalScale: {x: 1, y: 0.1, z: 0.10387}
+  m_LocalPosition: {x: -0.0075, y: 0, z: -0.444}
+  m_LocalScale: {x: 1.0151, y: 0.1, z: 0.10387}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5893268850012962885}
@@ -381,7 +382,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2560916309962371540}
   m_Layer: 0
-  m_Name: conveir
+  m_Name: conveir--
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

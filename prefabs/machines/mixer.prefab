@@ -163,7 +163,7 @@ GameObject:
   - component: {fileID: 1151953625989817639}
   m_Layer: 0
   m_Name: in_snap_point (1)
-  m_TagString: Untagged
+  m_TagString: Connnector
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -271,7 +271,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   entrancePrefab: {fileID: 0}
-  ingredientLayer: 7
 --- !u!1 &420514633918652865
 GameObject:
   m_ObjectHideFlags: 0
@@ -534,7 +533,7 @@ GameObject:
   - component: {fileID: 8637582162321746291}
   m_Layer: 0
   m_Name: in_snap_point
-  m_TagString: Untagged
+  m_TagString: Connnector
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -642,7 +641,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   entrancePrefab: {fileID: 0}
-  ingredientLayer: 7
 --- !u!1 &685824933477305796
 GameObject:
   m_ObjectHideFlags: 0
