@@ -12,6 +12,7 @@ public class HotbarUI : MonoBehaviour
     [SerializeField] private List<GameObject> slotOutlines = new List<GameObject>();
     [SerializeField] private List<Image> slotIcons = new List<Image>();
     [SerializeField] private List<TextMeshProUGUI> slotAmountTexts = new List<TextMeshProUGUI>();
+    [SerializeField] private InventoryDragController dragController;
 
     private void Start()
     {
@@ -23,6 +24,7 @@ public class HotbarUI : MonoBehaviour
     {
         // Можно добавить проверку изменений для оптимизации
         UpdateAllSlots();
+        AssignSlotClickHandlers();
     }
 
     private void InitializeUIReferences()
@@ -37,6 +39,38 @@ public class HotbarUI : MonoBehaviour
                 slotIcons.Add(slot.Find("Icon").GetComponent<Image>());
                 slotAmountTexts.Add(slot.Find("AmountText").GetComponent<TextMeshProUGUI>());
             }
+        }
+    }
+
+    private void AssignSlotClickHandlers()
+    {
+        // Проходим по всем слотам (дочерним объектам)
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            int slotIndex = i; // важный момент — копируем индекс для замыкания
+
+            Transform slotTransform = transform.GetChild(i);
+            Button button = slotTransform.GetComponent<Button>();
+            Image icon = slotTransform.Find("Icon")?.GetComponent<Image>();
+
+            if (button == null || icon == null)
+            {
+                Debug.LogWarning($"Слот {i} не содержит Button или Icon");
+                continue;
+            }
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() =>
+            {
+                // Берём предмет из инвентаря по индексу
+                Item item = inventory.hotbar[slotIndex];
+
+                // Проверяем есть ли предмет и активна ли иконка
+                if (item != null && item.amount > 0 && icon.enabled && icon.sprite != null)
+                {
+                    dragController.StartDrag(icon, item);
+                }
+            });
         }
     }
 

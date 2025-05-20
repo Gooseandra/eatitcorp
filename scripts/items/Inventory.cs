@@ -7,6 +7,7 @@ public class Inventory : MonoBehaviour
     public List<Item> hotbar = new List<Item>();
     public int selectedSlot = 0;
     public Transform Player;
+    public HotbarUI hotbarUI;
 
 
     bool lastVal = false;
@@ -121,4 +122,18 @@ public class Inventory : MonoBehaviour
     {
         hotbar[index].amount--;
     }
+
+    public void RemoveItem(Item itemToRemove)
+    {
+        for (int i = 0; i < hotbar.Count; i++)
+        {
+            if (hotbar[i] == itemToRemove)
+            {
+                hotbar[i] = null;
+                hotbarUI.UpdateAllSlots(); // обязательно обнови UI
+                return;
+            }
+        }
+    }
+
 }

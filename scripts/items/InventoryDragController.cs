@@ -1,19 +1,24 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System.Collections.Generic;
 
 public class InventoryDragController : MonoBehaviour
 {
+    public static InventoryDragController Instance;
+
     [SerializeField] private Canvas canvas;
     [SerializeField] private Image dragIcon;
 
-    private Image currentSlotIcon; // текущая иконка, которую скрыли
-    private Transform originalParent; // куда возвращать
+    private Image currentSlotIcon;
+    private Transform originalParent;
     private bool isDragging = false;
+    private Item draggedItem;
 
     private void Awake()
     {
+        dragIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        Instance = this;
+
         if (canvas == null)
             canvas = GetComponentInParent<Canvas>();
 
@@ -29,73 +34,47 @@ public class InventoryDragController : MonoBehaviour
         {
             Debug.LogError("DragIcon не найден!");
         }
-
-        AssignSlotClickHandlers();
     }
 
     private void Update()
     {
-        // Если курсор заблокирован — отменить перетаскивание и скрыть иконку
-        if (Cursor.lockState == CursorLockMode.Locked)
+        if (isDragging)
         {
-            if (isDragging)
-                CancelDrag();
+            Camera cam = (canvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : canvas.worldCamera;
 
+            Vector3 globalMousePos;
+            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                canvas.transform as RectTransform,
+                Input.mousePosition,
+                cam,
+                out globalMousePos))
+            {
+                dragIcon.rectTransform.position = globalMousePos;
+            }
+
+            if (Cursor.lockState == CursorLockMode.Locked || Input.GetKeyDown(KeyCode.Tab))
+            {
+                CancelDrag();
+            }
+        }
+    }
+
+    public void StartDrag(Image iconToDrag, Item item)
+    {
+        Debug.Log("start drag");
+        Debug.Log(iconToDrag);
+        Debug.Log(item);
+        if (iconToDrag == null || item == null)
+        {
+            Debug.Log("в пизду");
             return;
         }
 
-        if (isDragging)
-        {
-            Vector2 mousePos = Input.mousePosition;
-            RectTransform dragRect = dragIcon.rectTransform;
 
-            Vector3 worldPos;
-            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
-                    canvas.transform as RectTransform,
-                    mousePos,
-                    canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
-                    out worldPos))
-            {
-                dragRect.position = worldPos;
-            }
-
-            // Отмена по Tab
-            if (Input.GetKeyDown(KeyCode.Tab))
-            {
-                CancelDrag();
-            }
-        }
-    }
-
-
-    private void AssignSlotClickHandlers()
-    {
-        foreach (Transform child in transform)
-        {
-            Button button = child.GetComponent<Button>();
-            if (button == null) continue;
-
-            // Копия ссылки на объект (иначе замыкание сломает)
-            Transform slotTransform = child;
-
-            button.onClick.AddListener(() =>
-            {
-                Image icon = slotTransform.Find("Icon")?.GetComponent<Image>();
-                if (icon != null && icon.enabled && icon.sprite != null)
-                {
-                    StartDrag(icon);
-                }
-            });
-        }
-    }
-
-    private void StartDrag(Image iconToDrag)
-    {
         currentSlotIcon = iconToDrag;
+        draggedItem = item;
         originalParent = iconToDrag.transform.parent;
 
-        Debug.Log(iconToDrag);
-        Debug.Log(iconToDrag.sprite);
         dragIcon.sprite = iconToDrag.sprite;
         dragIcon.enabled = true;
         isDragging = true;
@@ -103,7 +82,7 @@ public class InventoryDragController : MonoBehaviour
         iconToDrag.enabled = false;
     }
 
-    private void CancelDrag()
+    public void CancelDrag()
     {
         if (currentSlotIcon != null)
             currentSlotIcon.enabled = true;
@@ -111,5 +90,10 @@ public class InventoryDragController : MonoBehaviour
         dragIcon.sprite = null;
         dragIcon.enabled = false;
         isDragging = false;
+        draggedItem = null;
     }
+
+    public bool IsDragging() => isDragging && draggedItem != null;
+
+    public Item GetDraggedItem() => draggedItem;
 }

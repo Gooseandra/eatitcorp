@@ -45,11 +45,7 @@ public class Storage : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, interactionDistance))
-        {
-            return hit.collider.gameObject == this.gameObject;
-        }
-        return false;
+        return Physics.Raycast(ray, out hit, interactionDistance) && hit.collider.gameObject == this.gameObject;
     }
 
     public void TryOpenStorage()
@@ -67,9 +63,11 @@ public class Storage : MonoBehaviour
             storageUIInstance = Instantiate(storageUIPrefab, storageUIParent);
             CreateSlotUIs();
         }
+
         storageUIInstance.SetActive(true);
         isUIOpen = true;
         UpdateStorageUI();
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         playerMovement.lockCamera = true;
@@ -78,9 +76,8 @@ public class Storage : MonoBehaviour
     public void CloseStorage()
     {
         if (storageUIInstance != null)
-        {
             storageUIInstance.SetActive(false);
-        }
+
         isUIOpen = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -90,20 +87,21 @@ public class Storage : MonoBehaviour
     private void CreateSlotUIs()
     {
         slotUIs.Clear();
+
         foreach (Transform child in storageUIInstance.transform)
         {
-            if (child.GetComponent<StorageSlotUI>() != null)
+            StorageSlotUI slot = child.GetComponent<StorageSlotUI>();
+            if (slot != null)
             {
-                slotUIs.Add(child.GetComponent<StorageSlotUI>());
+                int index = slotUIs.Count;
+                slot.Setup(this, index);
+                slotUIs.Add(slot);
             }
         }
-
-        for (int i = 0; i < slotUIs.Count; i++)
-        {
-            int slotIndex = i;
-            slotUIs[i].GetComponent<Button>().onClick.AddListener(() => TransferItemToInventory(slotIndex));
-        }
     }
+
+
+
 
     public void UpdateStorageUI()
     {
@@ -115,15 +113,12 @@ public class Storage : MonoBehaviour
 
     public bool AddItem(Item newItem)
     {
-        // Попробуем добавить к существующему стеку
         for (int i = 0; i < storageItems.Count; i++)
         {
-            if (storageItems[i] != null &&
-                storageItems[i].name == newItem.name &&
-                storageItems[i].amount < storageItems[i].maxStack)
+            if (storageItems[i] != null && storageItems[i].name == newItem.name && storageItems[i].amount < storageItems[i].maxStack)
             {
-                int spaceLeft = storageItems[i].maxStack - storageItems[i].amount;
-                if (newItem.amount <= spaceLeft)
+                int space = storageItems[i].maxStack - storageItems[i].amount;
+                if (newItem.amount <= space)
                 {
                     storageItems[i].amount += newItem.amount;
                     UpdateStorageUI();
@@ -132,15 +127,14 @@ public class Storage : MonoBehaviour
                 else
                 {
                     storageItems[i].amount = storageItems[i].maxStack;
-                    newItem.amount -= spaceLeft;
+                    newItem.amount -= space;
                 }
             }
         }
 
-        // Добавляем в пустой слот
         for (int i = 0; i < storageItems.Count; i++)
         {
-            if (storageItems[i] == null || storageItems[i].amount == 0)
+            if (storageItems[i] == null || storageItems[i].amount <= 0)
             {
                 storageItems[i] = newItem;
                 UpdateStorageUI();
@@ -151,43 +145,57 @@ public class Storage : MonoBehaviour
         return false;
     }
 
-    public void TransferItemToInventory(int slotIndex)
+    public void TransferEntireItemToInventory(int slotIndex)
     {
         if (slotIndex >= 0 && slotIndex < storageItems.Count &&
             storageItems[slotIndex] != null && storageItems[slotIndex].amount > 0)
         {
-            Item itemToTransfer = storageItems[slotIndex];
-            itemToTransfer.amount = 1;
+            Item originalItem = storageItems[slotIndex];
+            Item itemToTransfer = new Item(
+                originalItem.name,
+                originalItem.amount,
+                originalItem.maxStack,
+                originalItem.icon,
+                originalItem.thisPrefab,
+                originalItem.buildingIndex
+            );
+
+            if (playerInventory.AddItem(itemToTransfer))
+            {
+                storageItems[slotIndex] = null;
+                UpdateStorageUI();
+                playerInventory.hotbarUI.UpdateAllSlots();
+            }
+        }
+    }
+
+    public void TransferOneItemToInventory(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < storageItems.Count &&
+            storageItems[slotIndex] != null && storageItems[slotIndex].amount > 0)
+        {
+            Item originalItem = storageItems[slotIndex];
+
+            Item itemToTransfer = new Item(
+                originalItem.name,
+                1,
+                originalItem.maxStack,
+                originalItem.icon,
+                originalItem.thisPrefab,
+                originalItem.buildingIndex
+            );
 
             if (playerInventory.AddItem(itemToTransfer))
             {
                 storageItems[slotIndex].amount--;
                 if (storageItems[slotIndex].amount <= 0)
-                {
                     storageItems[slotIndex] = null;
-                }
+
                 UpdateStorageUI();
+                playerInventory.hotbarUI.UpdateAllSlots();
             }
         }
     }
 
-    public void TransferItemToStorage(int slotIndex)
-    {
-        if (slotIndex >= 0 && slotIndex < playerInventory.hotbar.Count &&
-            playerInventory.hotbar[slotIndex] != null && playerInventory.hotbar[slotIndex].amount > 0)
-        {
-            Item itemToTransfer = playerInventory.hotbar[slotIndex];
-            itemToTransfer.amount = 1;
 
-            if (AddItem(itemToTransfer))
-            {
-                playerInventory.hotbar[slotIndex].amount--;
-                if (playerInventory.hotbar[slotIndex].amount <= 0)
-                {
-                    playerInventory.hotbar[slotIndex] = null;
-                }
-                // Здесь нужно вызвать метод обновления UI инвентаря игрока
-            }
-        }
-    }
 }

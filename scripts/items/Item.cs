@@ -10,13 +10,14 @@ public class Item
     public GameObject thisPrefab;
     public int buildingIndex;
 
-    public Item(string name, int amount, Sprite icon, GameObject prefab, int buildingIndex)
+    public Item(string name, int amount, int maxStack, Sprite icon, GameObject prefab, int buildingIndex)
     {
         this.name = name;
         this.amount = amount;
         this.icon = icon;
         this.thisPrefab = prefab;
         this.buildingIndex = buildingIndex;
+        this.maxStack = maxStack;
     }
 
     public bool CanStack()
