@@ -70,11 +70,16 @@ public class HotbarUI : MonoBehaviour
         // Обновляем иконку
         if (slotIndex < slotIcons.Count && slotIcons[slotIndex] != null)
         {
-            slotIcons[slotIndex].gameObject.SetActive(hasItem);
+            //slotIcons[slotIndex].gameObject.SetActive(hasItem);
             if (hasItem)
             {
                 slotIcons[slotIndex].sprite = item.icon;
                 slotIcons[slotIndex].preserveAspect = true;
+                slotIcons[slotIndex].enabled = item.icon != null;
+            }
+            else
+            {
+                slotIcons[slotIndex].enabled = false;
             }
         }
 

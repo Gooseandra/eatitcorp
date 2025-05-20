@@ -484,7 +484,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -150.29999, y: -204.09998}
+  m_AnchoredPosition: {x: -150.29999, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3085746559261764851
@@ -540,6 +540,8 @@ MonoBehaviour:
   icon: {fileID: 7308961540441100988}
   amountText: {fileID: 2833206348740450612}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &923013095132480163
 GameObject:
   m_ObjectHideFlags: 0
@@ -653,7 +655,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 37.200012, y: -204.09998}
+  m_AnchoredPosition: {x: 37.200012, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2743731846784039731
@@ -709,6 +711,8 @@ MonoBehaviour:
   icon: {fileID: 1739730532967799913}
   amountText: {fileID: 1990075805331269564}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &1138754560970806389
 GameObject:
   m_ObjectHideFlags: 0
@@ -747,7 +751,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 3.033348, y: -204.09998}
+  m_AnchoredPosition: {x: 3.033348, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3541478278181984023
@@ -803,6 +807,8 @@ MonoBehaviour:
   icon: {fileID: 4645893770262378525}
   amountText: {fileID: 4455513904813138530}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &1227543107554361765
 GameObject:
   m_ObjectHideFlags: 0
@@ -1113,7 +1119,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -109.883316, y: -204.09998}
+  m_AnchoredPosition: {x: -109.883316, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5811012397160869365
@@ -1169,6 +1175,8 @@ MonoBehaviour:
   icon: {fileID: 7043329218635331163}
   amountText: {fileID: 2287516053788591333}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &2226306254822604654
 GameObject:
   m_ObjectHideFlags: 0
@@ -1792,7 +1800,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 177.2, y: -204.09998}
+  m_AnchoredPosition: {x: 177.2, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7862566566797268633
@@ -1848,6 +1856,8 @@ MonoBehaviour:
   icon: {fileID: 3785600226557443832}
   amountText: {fileID: 7613220064845650083}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &3126305572008999900
 GameObject:
   m_ObjectHideFlags: 0
@@ -2744,7 +2754,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 74.28334, y: -204.09998}
+  m_AnchoredPosition: {x: 74.28334, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2503630502128082142
@@ -2800,6 +2810,8 @@ MonoBehaviour:
   icon: {fileID: 8462363035592827404}
   amountText: {fileID: 572830823098983693}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &6499121955380974802
 GameObject:
   m_ObjectHideFlags: 0
@@ -2958,7 +2970,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -74.883316, y: -204.09998}
+  m_AnchoredPosition: {x: -74.883316, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4533661222886397884
@@ -3014,6 +3026,8 @@ MonoBehaviour:
   icon: {fileID: 8837754658733041630}
   amountText: {fileID: 922002870408224702}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &6654710974431360031
 GameObject:
   m_ObjectHideFlags: 0
@@ -3433,7 +3447,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 209.6}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6984059054822239945
@@ -3880,7 +3894,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -36.133316, y: -204.09998}
+  m_AnchoredPosition: {x: -36.133316, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2844970764854183292
@@ -3936,6 +3950,8 @@ MonoBehaviour:
   icon: {fileID: 4704097128943389563}
   amountText: {fileID: 121493029534651138}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &7940663163915568589
 GameObject:
   m_ObjectHideFlags: 0
@@ -4185,7 +4201,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 110.11667, y: -204.09998}
+  m_AnchoredPosition: {x: 110.11667, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3924879974598310819
@@ -4241,6 +4257,8 @@ MonoBehaviour:
   icon: {fileID: 948408380740253741}
   amountText: {fileID: 7372807289621001495}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &8368901643315367338
 GameObject:
   m_ObjectHideFlags: 0
@@ -4399,7 +4417,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 143.45, y: -204.09998}
+  m_AnchoredPosition: {x: 143.45, y: 44.100037}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7992435460346448198
@@ -4455,6 +4473,8 @@ MonoBehaviour:
   icon: {fileID: 8293874137369512598}
   amountText: {fileID: 8600598971739249441}
   selectionOutline: {fileID: 0}
+  button: {fileID: 0}
+  dragController: {fileID: 0}
 --- !u!1 &8628029689025837398
 GameObject:
   m_ObjectHideFlags: 0
@@ -4490,7 +4510,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 14.5, y: -240.2}
+  m_AnchoredPosition: {x: 14.5, y: 8}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8916773618811644270

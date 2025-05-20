@@ -8,12 +8,21 @@ public class HotbarSlotUI : MonoBehaviour
     public Image icon;
     public TextMeshProUGUI amountText;
     public GameObject selectionOutline;
+    public Button button;
+    public InventoryDragController dragController;
+
+    private void Start()
+    {
+        this.gameObject.SetActive(true);
+        dragController = this.GetComponent<InventoryDragController>();
+    }
 
     public void UpdateSlot(bool isSelected, Item item)
     {
         // Обновляем иконку
         if (item != null && item.amount > 0)
         {
+           // dragController.SetIcon(item.icon);
             icon.sprite = item.icon;
             icon.enabled = true;
 
@@ -30,4 +39,5 @@ public class HotbarSlotUI : MonoBehaviour
         // Обновляем выделение
         selectionOutline.SetActive(isSelected);
     }
+
 }
