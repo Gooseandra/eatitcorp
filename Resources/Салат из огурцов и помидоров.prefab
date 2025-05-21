@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4472759015413686693}
   - component: {fileID: 4446585886243732818}
   - component: {fileID: 6456097012525800729}
+  - component: {fileID: -7028895562000836007}
   m_Layer: 7
   m_Name: "\u0421\u0430\u043B\u0430\u0442 \u0438\u0437 \u043E\u0433\u0443\u0440\u0446\u043E\u0432
     \u0438 \u043F\u043E\u043C\u0438\u0434\u043E\u0440\u043E\u0432"
@@ -166,5 +167,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71c22caa5ec0603459ca270a209b3ab3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ingredientName: "\u043F\u043E\u043C\u0438\u0434\u043E\u0440"
+  Name: 
   containedIngredients: []
+--- !u!114 &-7028895562000836007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4899118179312444400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a36f736546c05c419d4535b3f8d7fc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  item:
+    name: "\u0421\u0430\u043B\u0430\u0442 \u0438\u0437 \u043E\u0433\u0443\u0440\u0446\u043E\u0432
+      \u0438 \u043F\u043E\u043C\u0438\u0434\u043E\u0440\u043E\u0432"
+    maxStack: 50
+    amount: 1
+    icon: {fileID: 598267128, guid: 2364d14605e3b22409d7c6f51ecca446, type: 3}
+    thisPrefab: {fileID: 0}
+    buildingIndex: -1
+  amount: 1
+  thisPrefab: {fileID: 4899118179312444400}

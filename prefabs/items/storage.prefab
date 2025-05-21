@@ -65,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ee06efb5744f33c429e5105f9e482fbf, type: 2}
+  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -173,7 +173,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ee06efb5744f33c429e5105f9e482fbf, type: 2}
+  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -281,7 +281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ee06efb5744f33c429e5105f9e482fbf, type: 2}
+  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -378,7 +378,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 3f8f8509465d626418b024800f6fbca2, type: 2}
     - target: {fileID: 919132149155446097, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
       propertyPath: m_Name
-      value: mixer
+      value: storage
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
       propertyPath: m_TagString
@@ -476,9 +476,9 @@ MonoBehaviour:
     name: "\u041C\u0438\u043A\u0441\u0435\u0440"
     maxStack: 50
     amount: 1
-    icon: {fileID: -925689059, guid: dcd549bc03408a64794c10f7ab4c2f09, type: 3}
+    icon: {fileID: -29136977, guid: dca4e15cf48cb294ba21e52754f7a9b1, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
-    buildingIndex: 0
+    buildingIndex: 2
   amount: 1
   thisPrefab: {fileID: 7189806269866987338}
 --- !u!4 &7533539320938632688 stripped

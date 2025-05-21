@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 3742826661646903722}
   - component: {fileID: 2783588526806917380}
   - component: {fileID: 7489066943356271002}
+  - component: {fileID: -297224217356353009}
   m_Layer: 7
   m_Name: waste
   m_TagString: grabbable
@@ -165,5 +166,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71c22caa5ec0603459ca270a209b3ab3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ingredientName: "\u043F\u043E\u043C\u0438\u0434\u043E\u0440"
+  Name: 
   containedIngredients: []
+--- !u!114 &-297224217356353009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 718121586398424251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a36f736546c05c419d4535b3f8d7fc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  item:
+    name: "\u041D\u0435\u0441\u044A\u0435\u0434\u043E\u0431\u043D\u043E\u0435 \u043C\u0435\u0441\u0438\u0432\u043E"
+    maxStack: 50
+    amount: 1
+    icon: {fileID: 609738744, guid: 12d793ed2a3e90547b263db859b34f21, type: 3}
+    thisPrefab: {fileID: 0}
+    buildingIndex: -1
+  amount: 1
+  thisPrefab: {fileID: 718121586398424251}

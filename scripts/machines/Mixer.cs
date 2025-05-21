@@ -71,8 +71,15 @@ public class Mixer : MonoBehaviour
             SpawnResult(mixedIngredients);
             ingACount--;
             ingBCount--;
+
+            // ќбнул€ем данные, если ингредиенты закончились
+            if (ingACount == 0)
+                ingredientAData = null;
+            if (ingBCount == 0)
+                ingredientBData = null;
         }
     }
+
 
     private void SpawnResult(List<string> ingredients)
     {

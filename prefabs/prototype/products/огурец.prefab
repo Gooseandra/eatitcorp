@@ -185,7 +185,7 @@ MonoBehaviour:
     name: "\u041E\u0433\u0443\u0440\u0435\u0446"
     maxStack: 50
     amount: 1
-    icon: {fileID: -925689059, guid: dcd549bc03408a64794c10f7ab4c2f09, type: 3}
+    icon: {fileID: -1860641626, guid: 0b381b9a4ec0c574bb66882fc8df2e05, type: 3}
     thisPrefab: {fileID: 7400819867914681741}
     buildingIndex: -1
   amount: 1

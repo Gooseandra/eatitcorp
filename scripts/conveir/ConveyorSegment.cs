@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -6,11 +7,18 @@ using UnityEditor;
 
 public class ConveyorSegment : MonoBehaviour
 {
-    public Transform waypoint; // Целевая точка для текущего сегмента
-    public ConveyorSegment nextSegment; // Следующий сегмент конвейера
+    public Transform waypoint;
+    public ConveyorSegment nextSegment;
     [SerializeField] Transform[] nextPoints;
+    [SerializeField] private SnapPoint snapPoint;
+    [SerializeField] private float speed = 0.5f;
 
-    [SerializeField] private float speed = 0.5f; // Скорость движения объектов
+    private Dictionary<Rigidbody, Vector3> lastPositions = new();
+
+    private void Start()
+    {
+        snapPoint = this.GetComponent<SnapPoint>();
+    }
 
     private void OnCollisionStay(Collision collision)
     {
@@ -18,7 +26,7 @@ public class ConveyorSegment : MonoBehaviour
         {
             Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
             ConveirMovement cm = collision.gameObject.GetComponent<ConveirMovement>();
-            if (rb != null)
+            if (rb != null && cm != null)
             {
                 MoveObject(rb, cm);
             }
@@ -27,10 +35,18 @@ public class ConveyorSegment : MonoBehaviour
 
     public void MoveObject(Rigidbody rb, ConveirMovement cm)
     {
-        if (nextSegment == null)
+        Vector3 targetPosition = waypoint.position;
+        Vector3 direction = (targetPosition - rb.position).normalized;
+
+        float checkDistance = 0.5f;
+        Ray ray = new Ray(rb.position, direction);
+        bool isBlocked = Physics.Raycast(ray, out RaycastHit hit, checkDistance);
+
+        if (isBlocked && hit.collider.CompareTag("grabbable") && hit.rigidbody != rb)
         {
             cm.SetStopped(true);
             FreezeObjectPosition(rb);
+            rb.linearVelocity = Vector3.zero;
             return;
         }
         else
@@ -39,30 +55,49 @@ public class ConveyorSegment : MonoBehaviour
             UnfreezeObjectPosition(rb);
         }
 
-        if (!cm.IsStopped())
+        float distance = Vector3.Distance(rb.position, targetPosition);
+        if (distance < 0.05f)
         {
-            Vector3 targetPosition = nextSegment.waypoint.position;
-            Vector3 direction = (targetPosition - rb.position).normalized;
+            rb.position = targetPosition;
+            rb.linearVelocity = Vector3.zero;
 
-            if (Physics.Raycast(rb.position, direction, out RaycastHit hit, 0.6f))
+            if (nextSegment != null)
             {
-                if (hit.collider.CompareTag("grabbable"))
+                nextSegment.MoveObject(rb, cm);
+            }
+            else
+            {
+                cm.SetStopped(true);
+                FreezeObjectPosition(rb);
+            }
+        }
+        else
+        {
+            rb.linearVelocity = direction * speed;
+        }
+
+        // 👇 Проталкивание по координатам
+        if (!IsFrozen(rb) && !cm.IsStopped())
+        {
+            if (lastPositions.TryGetValue(rb, out Vector3 lastPos))
+            {
+                float movement = Vector3.Distance(rb.position, lastPos);
+                if (movement < 0.001f)
                 {
-                    cm.SetStopped(true);
-                    FreezeObjectPosition(rb);
-                    return;
+                    rb.position += direction * 0.1f; // Маленький шаг вручную
+
                 }
             }
 
-            rb.linearVelocity = direction * speed;
-
-            if (Vector3.Distance(rb.position, waypoint.position) < 0.05f)
-            {
-                rb.position = waypoint.position;
-                rb.linearVelocity = Vector3.zero;
-                nextSegment.MoveObject(rb, cm);
-            }
+            lastPositions[rb] = rb.position;
         }
+    }
+
+    private bool IsFrozen(Rigidbody body)
+    {
+        return (body.constraints & RigidbodyConstraints.FreezePositionX) != 0 &&
+               (body.constraints & RigidbodyConstraints.FreezePositionY) != 0 &&
+               (body.constraints & RigidbodyConstraints.FreezePositionZ) != 0;
     }
 
     private void FreezeObjectPosition(Rigidbody rb)
@@ -78,8 +113,6 @@ public class ConveyorSegment : MonoBehaviour
 
     public void SetNextSegment(ConveyorSegment newNextSegment)
     {
-        print("New next segment recived");
-        print(newNextSegment.gameObject.name);
         nextSegment = newNextSegment;
 
         if (nextSegment != null)
@@ -97,8 +130,6 @@ public class ConveyorSegment : MonoBehaviour
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, nextSegment.waypoint.position);
-
-            // Рисуем стрелку
             DrawArrow(transform.position, nextSegment.waypoint.position);
         }
     }
@@ -106,12 +137,10 @@ public class ConveyorSegment : MonoBehaviour
     private void DrawArrow(Vector3 from, Vector3 to)
     {
         Vector3 direction = (to - from).normalized;
-        float arrowSize = 0.5f; // Размер стрелки
+        float arrowSize = 0.5f;
 
-        // Основная линия стрелки
         Gizmos.DrawLine(from, to);
 
-        // Левые и правые "крылья" стрелки
         Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 150, 0) * Vector3.forward;
         Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, -150, 0) * Vector3.forward;
 

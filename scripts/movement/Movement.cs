@@ -21,7 +21,7 @@ public class Movement : MonoBehaviour
     //[SerializeField] float _crouchCameraHeight = 0f;
 
     [SerializeField] float _jumpForce = 100f;
-    [SerializeField] float mouseSensitivity = 1000f;
+    [SerializeField] float mouseSensitivity = 150f;
     [SerializeField] LayerMask groundMask;
 
     Rigidbody rb;
@@ -44,6 +44,9 @@ public class Movement : MonoBehaviour
         playerCollider = _moveableObj.GetComponent<CapsuleCollider>();
 
         Cursor.lockState = CursorLockMode.Locked;
+
+        Application.targetFrameRate = 90;
+        QualitySettings.vSyncCount = 1;
     }
 
     void FixedUpdate()

@@ -18,18 +18,19 @@ public class StorageSlotUI : MonoBehaviour, IPointerClickHandler
 
     public void SetItem(Item item)
     {
-        if (item != null)
+        if (item == null || item.amount <= 0)
         {
-            iconImage.sprite = item.icon;
-            iconImage.enabled = true;
-            amountText.text = item.amount > 1 ? item.amount.ToString() : "";
+            iconImage.enabled = false;      // отключаем иконку
+            amountText.text = "";
         }
         else
         {
-            iconImage.enabled = false;
-            amountText.text = "";
+            iconImage.enabled = true;       // включаем иконку
+            iconImage.sprite = item.icon;
+            amountText.text = item.amount.ToString();
         }
     }
+
 
     public void OnPointerClick(PointerEventData eventData)
     {
