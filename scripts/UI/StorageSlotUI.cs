@@ -41,7 +41,7 @@ public class StorageSlotUI : MonoBehaviour, IPointerClickHandler
                 Item dragged = InventoryDragController.Instance.GetDraggedItem();
                 if (dragged != null)
                 {
-                    Item copy = new Item(dragged.name, dragged.amount, dragged.maxStack, dragged.icon, dragged.thisPrefab, dragged.buildingIndex);
+                    Item copy = new Item(dragged.name, dragged.amount, dragged.maxStack, dragged.icon, dragged.thisPrefab, dragged.buildingIndex, dragged.growsTo, dragged.timeToGrow);
                     if (storage.AddItem(copy))
                     {
                         storage.playerInventory.RemoveItem(dragged);

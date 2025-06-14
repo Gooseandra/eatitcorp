@@ -72,7 +72,9 @@ public class Storage : MonoBehaviour
                     pickup.item.maxStack,
                     pickup.item.icon,
                     pickup.item.thisPrefab,
-                    pickup.item.buildingIndex
+                    pickup.item.buildingIndex,
+                    pickup.item.growsTo,
+                    pickup.item.timeToGrow
                 );
 
                 AddItem(itemCopy);
@@ -238,7 +240,6 @@ private void Update()
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other);
         // Проверяем, есть ли у объекта компонент ItemPickup
         ItemPickup pickup = other.GetComponent<ItemPickup>();
         if (pickup != null)
@@ -315,7 +316,9 @@ private void Update()
                 originalItem.maxStack,
                 originalItem.icon,
                 originalItem.thisPrefab,
-                originalItem.buildingIndex
+                originalItem.buildingIndex,
+                originalItem.growsTo,
+                originalItem.timeToGrow
             );
 
             if (playerInventory.AddItem(itemToTransfer))
@@ -340,7 +343,9 @@ private void Update()
                 originalItem.maxStack,
                 originalItem.icon,
                 originalItem.thisPrefab,
-                originalItem.buildingIndex
+                originalItem.buildingIndex,
+                originalItem.growsTo,
+                originalItem.timeToGrow
             );
 
             if (playerInventory.AddItem(itemToTransfer))

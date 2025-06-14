@@ -33,6 +33,8 @@ public class Building : MonoBehaviour
 
     private bool lastBuildingMode = false;
 
+    [SerializeField] float step = 1f;
+
     void Start()
     {
         buildingPanel.SetActive(false);
@@ -284,12 +286,9 @@ public class Building : MonoBehaviour
             float height = previewObject.transform.localScale.y / 2;
             Vector3 position = hit.point + Vector3.up * height;
 
-            if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
-            {
-                position.x = Mathf.Round(position.x);
-                position.y = Mathf.Round(position.y);
-                position.z = Mathf.Round(position.z);
-            }
+            position.x = Mathf.Round(position.x / step) * step;
+            position.y = Mathf.Round(position.y / step) * step;
+            position.z = Mathf.Round(position.z / step) * step;
 
             previewObject.transform.position = position;
 

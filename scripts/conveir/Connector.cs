@@ -10,10 +10,8 @@ public class Connector : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Trigger Entered");
         if (other.GetComponent<ItemPickup>() != null)
         {
-            Debug.Log("Item Pickup Detected");
             Mixer.HandleIngredient(other);
         }
     }

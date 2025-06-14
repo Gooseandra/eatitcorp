@@ -39,8 +39,6 @@ public class Inventory : MonoBehaviour
 
     public bool AddItem(Item newItem)
     {
-        Debug.Log(newItem.thisPrefab);
-        // ѕопробуем добавить к существующему стеку
         for (int i = 0; i < hotbar.Count; i++)
         {
             if (hotbar[i] != null &&
@@ -53,8 +51,6 @@ public class Inventory : MonoBehaviour
                     hotbar[i].amount += newItem.amount;
                     hotbar[i].thisPrefab = newItem.thisPrefab;
                     hotbar[i].buildingIndex = newItem.buildingIndex;
-                    Debug.Log(newItem.thisPrefab);
-                    Debug.Log(hotbar[i].thisPrefab);
                     return true;
                 }
                 else

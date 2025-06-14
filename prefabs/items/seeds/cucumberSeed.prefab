@@ -65,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
+  - {fileID: 2100000, guid: e195c14fef4306c48977c51531ef598a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -173,7 +173,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
+  - {fileID: 2100000, guid: fc3a7defff669db4abcc716a9d4223b8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -281,7 +281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 21e0973707480d6459b507a9470c7f7f, type: 2}
+  - {fileID: 2100000, guid: fc3a7defff669db4abcc716a9d4223b8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -378,7 +378,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 3f8f8509465d626418b024800f6fbca2, type: 2}
     - target: {fileID: 919132149155446097, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
       propertyPath: m_Name
-      value: storage
+      value: cucumberSeed
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
       propertyPath: m_TagString
@@ -473,12 +473,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   item:
-    name: "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435"
+    growsTo: {fileID: 7400819867914681741, guid: 77673049bfb6f3046813ca06b746e3e0, type: 3}
+    timeToGrow: 2
+    name: "\u0421\u0435\u043C\u044F \u043E\u0433\u0443\u0440\u0446\u0430"
     maxStack: 50
     amount: 1
-    icon: {fileID: -29136977, guid: dca4e15cf48cb294ba21e52754f7a9b1, type: 3}
+    icon: {fileID: -1860641626, guid: 0b381b9a4ec0c574bb66882fc8df2e05, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
-    buildingIndex: 2
+    buildingIndex: -1
   amount: 1
   thisPrefab: {fileID: 7189806269866987338}
 --- !u!4 &7533539320938632688 stripped

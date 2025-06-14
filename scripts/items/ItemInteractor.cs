@@ -26,9 +26,8 @@ public class ItemInteractor : MonoBehaviour
             ItemPickup itemPickup = hit.collider.GetComponent<ItemPickup>();
             if (itemPickup != null)
             {
-                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.maxStack, itemPickup.item.icon, itemPickup.thisPrefab, itemPickup.item.buildingIndex);
+                Item itemCopy = new Item(itemPickup.item.name, itemPickup.amount, itemPickup.item.maxStack, itemPickup.item.icon, itemPickup.thisPrefab, itemPickup.item.buildingIndex, itemPickup.item.growsTo, itemPickup.item.timeToGrow);
                 bool success = inventory.AddItem(itemCopy);
-                Debug.Log(success);
                 if (success)
                 {
                     itemPickup.gameObject.SetActive(false);
