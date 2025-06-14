@@ -182,6 +182,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   item:
+    growsTo: {fileID: 0}
+    timeToGrow: 0
     name: "\u041B\u0443\u043A"
     maxStack: 50
     amount: 1

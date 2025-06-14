@@ -5,54 +5,34 @@ public class PlantingController : MonoBehaviour
     public Inventory inventory;
     public float rayDistance = 2f;
     public LayerMask gardenLayer;
-    public Camera playerCamera; // ссылка на камеру, задаётся в инспекторе или через код
+    public Camera playerCamera;
 
     void Update()
     {
-        Vector3 origin = playerCamera.transform.position;
-        Vector3 direction = playerCamera.transform.forward;
-
-        Debug.DrawRay(origin, direction * rayDistance, Color.green);
-
         if (Input.GetKeyDown(KeyCode.E))
         {
-            TryPlantSeed(origin, direction);
+            TryPlantSeed();
         }
     }
 
-    void TryPlantSeed(Vector3 origin, Vector3 direction)
+    void TryPlantSeed()
     {
-        Ray ray = new Ray(origin, direction);
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, gardenLayer))
         {
-            Debug.Log("Попали в объект: " + hit.transform.name);
             GardenBed gardenBed = hit.transform.GetComponent<GardenBed>();
-            if (gardenBed == null)
-            {
-                Debug.LogWarning("Объект не грядка!");
-                return;
-            }
+            if (gardenBed == null) return;
 
             int selected = inventory.selectedSlot;
             Item item = inventory.hotbar[selected];
 
-            if (item == null || item.growsTo == null || item.amount <= 0)
-            {
-                Debug.Log("Нет семян в выбранном слоте.");
-                return;
-            }
+            if (item == null || item.growsTo == null || item.amount <= 0) return;
+            if (gardenBed.IsGrowing) return;
 
-            if (gardenBed.IsGrowing)
-            {
-                Debug.Log("Грядка уже занята.");
-                return;
-            }
-
-            // Запускаем рост растения на грядке
+            Debug.Log("pc: " + item.timeToGrow);
             gardenBed.StartGrowing(item.growsTo, item.timeToGrow);
-
-            // Уменьшаем количество семян
             item.amount--;
+
             if (item.amount <= 0)
             {
                 inventory.RemoveItem(item);
@@ -61,5 +41,4 @@ public class PlantingController : MonoBehaviour
             inventory.hotbarUI.UpdateAllSlots();
         }
     }
-
 }

@@ -181,6 +181,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   item:
+    growsTo: {fileID: 0}
+    timeToGrow: 0
     name: "\u041D\u0435\u0441\u044A\u0435\u0434\u043E\u0431\u043D\u043E\u0435 \u043C\u0435\u0441\u0438\u0432\u043E"
     maxStack: 50
     amount: 1
