@@ -9,11 +9,10 @@ public class GardenBed : MonoBehaviour
 
     private GameObject plantPrefab;
     private float growthTime;
-    private bool isBeingHarvested;
 
     public void StartGrowing(GameObject plantPrefab, float growTime)
     {
-        if (IsGrowing || isBeingHarvested || IsReserved) return;
+        if (IsGrowing || IsReserved) return;
 
         this.plantPrefab = plantPrefab;
         this.growthTime = growTime;
@@ -21,68 +20,44 @@ public class GardenBed : MonoBehaviour
         IsGrowing = true;
         IsReadyToHarvest = false;
         IsReserved = false;
-        isBeingHarvested = false;
 
-        // Удаляем предыдущее растение (если было)
-        if (CurrentPlant != null)
-        {
-            Destroy(CurrentPlant);
-            CurrentPlant = null;
-        }
-
-        // НЕ создаем растение сразу!
-        // Только запускаем таймер роста
         CancelInvoke(nameof(OnPlantReady));
         Invoke(nameof(OnPlantReady), growthTime);
-
-        Debug.Log($"Начали выращивать {plantPrefab.name}. Время роста: {growthTime} сек");
     }
 
     private void OnPlantReady()
     {
         if (!IsGrowing) return;
 
-        // Создаем растение только когда оно созрело
         CurrentPlant = Instantiate(
             plantPrefab,
-            transform.position + Vector3.up * 0.5f, // Небольшое смещение вверх
+            transform.position + Vector3.up * 0.5f,
             Quaternion.identity,
             transform
         );
 
-        // Настраиваем физику
-        Rigidbody rb = CurrentPlant.GetComponent<Rigidbody>();
-        if (rb != null)
+        // Отключаем физику, чтобы растение не падало
+        if (CurrentPlant.TryGetComponent(out Rigidbody rb))
         {
             rb.isKinematic = true;
             rb.useGravity = false;
         }
 
-        Collider collider = CurrentPlant.GetComponent<Collider>();
-        if (collider != null) collider.isTrigger = true;
-
         IsReadyToHarvest = true;
-        Debug.Log($"Растение {plantPrefab.name} созрело!");
     }
 
-    public void Harvest()
+    public GameObject TakePlant()
     {
-        if (!IsReadyToHarvest || isBeingHarvested) return;
-
-        isBeingHarvested = true;
-
-        if (CurrentPlant != null)
-        {
-            Destroy(CurrentPlant);
-            CurrentPlant = null;
-        }
+        if (!IsReadyToHarvest || CurrentPlant == null) return null;
 
         IsReadyToHarvest = false;
         IsGrowing = false;
         IsReserved = false;
-        isBeingHarvested = false;
 
-        Debug.Log($"Урожай собран с грядки {name}");
+        GameObject plant = CurrentPlant;
+        CurrentPlant = null; // Очищаем ссылку, но не удаляем объект!
+
+        return plant;
     }
 
     private void OnDestroy()

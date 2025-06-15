@@ -71,6 +71,8 @@ MonoBehaviour:
   scanInterval: 2
   harvestDistance: 1
   harvestTime: 0.5
+  storageSearchRadius: 10
+  carryPosition: {fileID: 1932480131144848351}
 --- !u!1001 &1936040402061039361
 PrefabInstance:
   m_ObjectHideFlags: 0
