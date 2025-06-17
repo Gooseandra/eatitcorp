@@ -36,11 +36,13 @@ public class GardenBed : MonoBehaviour
             transform
         );
 
-        // Отключаем физику, чтобы растение не падало
         if (CurrentPlant.TryGetComponent(out Rigidbody rb))
         {
             rb.isKinematic = true;
-            rb.useGravity = false;
+        }
+        if (CurrentPlant.TryGetComponent(out CapsuleCollider col))
+        {
+            col.isTrigger = true;
         }
 
         IsReadyToHarvest = true;

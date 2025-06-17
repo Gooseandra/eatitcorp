@@ -15,7 +15,7 @@ public class HarvestRobot : MonoBehaviour
 
     [Header("Настройки порта")]
     [SerializeField] private float portSearchRadius = 15f;
-    [SerializeField] private float portApproachDistance = 1f;
+    [SerializeField] private float portApproachDistance = 2f;
     [SerializeField] private Vector3 carryOffset = new Vector3(0, 0.5f, 0);
 
     private NavMeshAgent agent;

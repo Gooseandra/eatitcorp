@@ -177,4 +177,19 @@ public class Movement : MonoBehaviour
 
         return Physics.Raycast(_moveableObj.transform.position, Vector3.down, rayLength, groundMask);
     }
+
+    public void SetPlayerControlLock(bool isLocked)
+    {
+        lockCamera = isLocked;
+
+        if (isLocked)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
+        else
+        {
+            rb.isKinematic = false;
+        }
+    }
 }
