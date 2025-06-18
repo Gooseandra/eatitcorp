@@ -51,7 +51,11 @@ public class Storage : MonoBehaviour
 
         InitializeStorage();
 
-        // Добавляем из списка initialItems
+        SetInitItems();
+    }
+
+    public void SetInitItems()
+    {
         foreach (var initialItem in initialItems)
         {
             if (initialItem.itemPrefab == null) continue;
@@ -82,7 +86,7 @@ public class Storage : MonoBehaviour
         }
     }
 
-private void Update()
+    private void Update()
     {
         if (isUIOpen && (Input.GetKeyDown(KeyCode.Escape) || !IsPlayerLookingAtStorage()))
         {
