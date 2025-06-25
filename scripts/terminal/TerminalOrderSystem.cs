@@ -167,6 +167,6 @@ public class TerminalOrderSystem : MonoBehaviour
 
     private void UpdateBalanceText()
     {
-        balanceText.text = "Баланс: $" + balance;
+        balanceText.text = balance.ToString();
     }
 }

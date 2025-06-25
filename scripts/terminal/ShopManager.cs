@@ -39,7 +39,7 @@ public class ShopManager : MonoBehaviour
             int maxStack = pickup.item.maxStack;
 
             card.transform.Find("NameText").GetComponent<TextMeshProUGUI>().text = pickup.item.name;
-            card.transform.Find("PriceText").GetComponent<TextMeshProUGUI>().text = "$" + itemData.price;
+            card.transform.Find("PriceText").GetComponent<TextMeshProUGUI>().text = itemData.price.ToString();
             card.transform.Find("Icon").GetComponent<Image>().sprite = pickup.item.icon;
 
             TMP_InputField amountInput = card.transform.Find("AmountInputField").GetComponent<TMP_InputField>();

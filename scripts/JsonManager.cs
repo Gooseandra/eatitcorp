@@ -108,7 +108,7 @@ public class Recipe
 {
     public string name;
     public List<string> ingredients;
-    public List<string> instructions;
+    public int cost; // Новое поле - стоимость рецепта
 }
 
 [System.Serializable]
