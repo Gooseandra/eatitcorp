@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2815192111956161591}
   - component: {fileID: 8391307490376506459}
+  - component: {fileID: 3745216600682078002}
   m_Layer: 3
   m_Name: gradka
   m_TagString: Untagged
@@ -45,6 +46,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f035a0307839dc44bb7d192eb930cc37, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3745216600682078002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 642562000318229783}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 212abfd7a1440db4bbb9d4ceaadb418b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  index: 19
 --- !u!1 &3576298222885833279
 GameObject:
   m_ObjectHideFlags: 0

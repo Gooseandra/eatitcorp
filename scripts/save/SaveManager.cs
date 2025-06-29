@@ -1,288 +1,280 @@
+п»їusing UnityEngine;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using System.Reflection;
 using System.IO;
-using TMPro;
+using System;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class SaveManager : MonoBehaviour
 {
-    private string saveFilePath;
+    public static bool LoadOnNextScene = false;
 
-    void Start()
+    [Serializable]
+    public class ScriptData
     {
-        saveFilePath = Application.persistentDataPath + "/savegame.json";
+        public string scriptName;
+        public string jsonData;
     }
 
-    // Метод для сохранения всех данных объектов
-    public void SaveGame()
+    [Serializable]
+    public class SavedObjectData
     {
-        SaveData saveData = new SaveData();
+        public int id;
+        public int prefabIndex;
+        public bool isSceneObject;
+        public string sceneObjectName;
+        public Vector3 position;
+        public Quaternion rotation;
+        public Vector3 scale;
+        public int? parentId;
+        public List<ScriptData> scripts = new List<ScriptData>();
+    }
 
-        // Получаем все объекты на сцене
-        GameObject[] allObjects = FindObjectsOfType<GameObject>();
+    [Serializable]
+    public class SaveWrapper
+    {
+        public List<SavedObjectData> objects;
+    }
 
-        // Перебираем все объекты
-        foreach (GameObject obj in allObjects)
+    private Dictionary<int, GameObject> prefabDict;
+
+    private void Awake()
+    {
+        prefabDict = new Dictionary<int, GameObject>();
+
+#if UNITY_EDITOR
+        string[] guids = AssetDatabase.FindAssets("t:prefab", new[] { "Assets/SavePrefabs" });
+
+        foreach (string guid in guids)
         {
-            if (obj == null)
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null)
             {
-                Debug.LogWarning("Объект пустой: " + obj.name);
+                var indexComp = prefab.GetComponent<PrefabIndex>();
+                if (indexComp != null)
+                {
+                    int index = indexComp.index;
+                    if (!prefabDict.ContainsKey(index))
+                        prefabDict.Add(index, prefab);
+                    else
+                        Debug.LogWarning($"Duplicate prefab index {index} at {path}");
+                }
+            }
+        }
+#else
+        Debug.LogError("Prefab loading only works in the editor.");
+#endif
+    }
+
+    private void Start()
+    {
+        if (LoadOnNextScene)
+        {
+            LoadOnNextScene = false;
+            LoadScene();
+        }
+    }
+
+    public void SaveScene()
+    {
+        var allObjects = FindObjectsOfType<PrefabIndex>();
+        List<PrefabIndex> rootObjects = new List<PrefabIndex>();
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+        foreach (var obj in allObjects)
+        {
+            if (obj.gameObject == player) continue;
+
+            if (obj.transform.parent == null || obj.transform.parent.GetComponent<PrefabIndex>() == null)
+            {
+                rootObjects.Add(obj);
+            }
+        }
+
+        List<SavedObjectData> savedObjects = new List<SavedObjectData>();
+        Dictionary<GameObject, int> objectToId = new Dictionary<GameObject, int>();
+        int nextId = 0;
+
+        foreach (var obj in rootObjects)
+        {
+            objectToId[obj.gameObject] = nextId++;
+        }
+
+        foreach (var obj in rootObjects)
+        {
+            GameObject go = obj.gameObject;
+            var data = new SavedObjectData
+            {
+                id = objectToId[go],
+                prefabIndex = obj.index,
+                isSceneObject = false,
+                sceneObjectName = "",
+                position = go.transform.localPosition,
+                rotation = go.transform.localRotation,
+                scale = go.transform.localScale,
+                parentId = go.transform.parent != null && objectToId.ContainsKey(go.transform.parent.gameObject)
+                            ? objectToId[go.transform.parent.gameObject]
+                            : (int?)null
+            };
+
+            foreach (var script in go.GetComponents<MonoBehaviour>())
+            {
+                var type = script.GetType();
+                if (type == typeof(PrefabIndex) || type == typeof(SaveManager)) continue;
+
+                try
+                {
+                    string json = JsonUtility.ToJson(script);
+                    data.scripts.Add(new ScriptData
+                    {
+                        scriptName = type.AssemblyQualifiedName,
+                        jsonData = json
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Serialization error for {type}: {e.Message}");
+                }
+            }
+
+            savedObjects.Add(data);
+        }
+
+        // Save the Player
+        if (player != null)
+        {
+            var data = new SavedObjectData
+            {
+                id = nextId++,
+                prefabIndex = -1,
+                isSceneObject = true,
+                sceneObjectName = "Player",
+                position = player.transform.position,
+                rotation = player.transform.rotation,
+                scale = player.transform.localScale,
+                parentId = null
+            };
+
+            foreach (var script in player.GetComponents<MonoBehaviour>())
+            {
+                var type = script.GetType();
+                if (type == typeof(SaveManager)) continue;
+
+                try
+                {
+                    string json = JsonUtility.ToJson(script);
+                    data.scripts.Add(new ScriptData
+                    {
+                        scriptName = type.AssemblyQualifiedName,
+                        jsonData = json
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Serialization error for {type}: {e.Message}");
+                }
+            }
+
+            savedObjects.Add(data);
+        }
+
+        string jsonPath = Application.persistentDataPath + "/save.json";
+        File.WriteAllText(jsonPath, JsonUtility.ToJson(new SaveWrapper { objects = savedObjects }));
+        Debug.Log("Scene saved: " + jsonPath);
+    }
+
+    public void LoadScene()
+    {
+        string jsonPath = Application.persistentDataPath + "/save.json";
+        if (!File.Exists(jsonPath))
+        {
+            Debug.LogError("Save file not found.");
+            return;
+        }
+
+        string json = File.ReadAllText(jsonPath);
+        SaveWrapper wrapper = JsonUtility.FromJson<SaveWrapper>(json);
+
+        foreach (var obj in FindObjectsOfType<PrefabIndex>())
+        {
+            Destroy(obj.gameObject);
+        }
+
+        Dictionary<int, GameObject> idToObject = new Dictionary<int, GameObject>();
+
+        // Instantiate normal objects
+        foreach (var saved in wrapper.objects)
+        {
+            if (saved.isSceneObject) continue;
+
+            if (!prefabDict.TryGetValue(saved.prefabIndex, out GameObject prefab))
+            {
+                Debug.LogWarning($"Prefab with index {saved.prefabIndex} not found.");
                 continue;
             }
 
-            ObjectSaveData objectSaveData = new ObjectSaveData();
-            objectSaveData.objectName = obj.name;
+            GameObject go = Instantiate(prefab);
+            idToObject[saved.id] = go;
 
-            // Получаем все компоненты на объекте
-            Component[] components = obj.GetComponents<Component>();
-
-            // Перебираем все компоненты
-            foreach (Component component in components)
+            foreach (var script in saved.scripts)
             {
-                if (component == null)
-                {
-                    Debug.LogWarning("Компонент пустой на объекте: " + obj.name);
-                    continue;
-                }
+                var type = Type.GetType(script.scriptName);
+                if (type == null) continue;
 
-                // Получаем все поля компонента
-                FieldInfo[] fields = component.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // Перебираем все поля
-                foreach (FieldInfo field in fields)
-                {
-                    object fieldValue = field.GetValue(component);
-                    string valueAsString = fieldValue != null ? fieldValue.ToString() : "null";  // Проверяем на null
-
-                    // Добавляем данные поля в объект
-                    FieldData fieldData = new FieldData
-                    {
-                        fieldName = field.Name,
-                        fieldValue = valueAsString
-                    };
-                    objectSaveData.fields.Add(fieldData);
-                }
+                var comp = go.GetComponent(type) ?? go.AddComponent(type);
+                JsonUtility.FromJsonOverwrite(script.jsonData, comp);
             }
-
-            saveData.objectData.Add(objectSaveData);
         }
 
-        // Сохраняем все данные в файл
-        string json = JsonUtility.ToJson(saveData, true);
-        File.WriteAllText(saveFilePath, json);
-        Debug.Log("Game Saved");
+        // Apply parent relationships
+        foreach (var saved in wrapper.objects)
+        {
+            if (saved.parentId.HasValue && idToObject.ContainsKey(saved.parentId.Value) && idToObject.ContainsKey(saved.id))
+            {
+                idToObject[saved.id].transform.SetParent(idToObject[saved.parentId.Value].transform, false);
+            }
+        }
+
+        // Apply transforms
+        foreach (var saved in wrapper.objects)
+        {
+            GameObject go = null;
+
+            if (saved.isSceneObject && saved.sceneObjectName == "Player")
+            {
+                go = GameObject.FindGameObjectWithTag("Player");
+            }
+            else if (idToObject.TryGetValue(saved.id, out var obj))
+            {
+                go = obj;
+            }
+
+            if (go == null) continue;
+
+            go.transform.position = saved.position;
+            go.transform.rotation = saved.rotation;
+            go.transform.localScale = saved.scale;
+
+            foreach (var script in saved.scripts)
+            {
+                var type = Type.GetType(script.scriptName);
+                if (type == null) continue;
+
+                var comp = go.GetComponent(type) ?? go.AddComponent(type);
+                JsonUtility.FromJsonOverwrite(script.jsonData, comp);
+            }
+        }
+
+        Debug.Log("Scene loaded.");
     }
 
-    // Метод для загрузки данных
-    public void LoadGame()
+    public void LoadSceneByIndex(int sceneIndex)
     {
-        if (File.Exists(saveFilePath))
-        {
-            string json = File.ReadAllText(saveFilePath);
-            SaveData saveData = JsonUtility.FromJson<SaveData>(json);
-
-            // Загружаем данные для каждого объекта
-            foreach (ObjectSaveData objectSaveData in saveData.objectData)
-            {
-                // Находим объект по имени
-                GameObject obj = GameObject.Find(objectSaveData.objectName);
-                if (obj == null) continue;
-
-                // Перебираем все компоненты объекта
-                Component[] components = obj.GetComponents<Component>();
-
-                foreach (Component component in components)
-                {
-                    // Перебираем все сохранённые поля
-                    foreach (FieldData fieldData in objectSaveData.fields)
-                    {
-                        FieldInfo field = component.GetType().GetField(fieldData.fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (field != null)
-                        {
-                            // Преобразуем строковое значение обратно в соответствующий тип
-                            object fieldValue = ConvertStringToFieldType(fieldData.fieldValue, field.FieldType);
-                            field.SetValue(component, fieldValue);
-                        }
-                    }
-                }
-            }
-
-            Debug.Log("Game Loaded");
-        }
-        else
-        {
-            Debug.LogWarning("Save file not found!");
-        }
-    }
-
-    // Метод для преобразования строки в нужный тип
-    public static object ConvertStringToFieldType(string value, System.Type fieldType)
-    {
-        // Преобразование для примитивных типов
-        if (fieldType == typeof(int))
-        {
-            if (int.TryParse(value, out int intValue))
-            {
-                return intValue;
-            }
-            else
-            {
-                Debug.LogError("Invalid integer format: " + value);
-                return 0; // Значение по умолчанию
-            }
-        }
-        else if (fieldType == typeof(float))
-        {
-            if (float.TryParse(value, out float floatValue))
-            {
-                return floatValue;
-            }
-            else
-            {
-                Debug.LogError("Invalid float format: " + value);
-                return 0f; // Значение по умолчанию
-            }
-        }
-        else if (fieldType == typeof(bool))
-        {
-            if (bool.TryParse(value, out bool boolValue))
-            {
-                return boolValue;
-            }
-            else
-            {
-                Debug.LogError("Invalid boolean format: " + value);
-                return false; // Значение по умолчанию
-            }
-        }
-        else if (fieldType == typeof(string))
-        {
-            return value; // Строка остается как есть
-        }
-        else if (fieldType == typeof(Vector3))
-        {
-            string[] values = value.Split(',');
-            if (values.Length == 3)
-            {
-                float x = float.Parse(values[0]);
-                float y = float.Parse(values[1]);
-                float z = float.Parse(values[2]);
-                return new Vector3(x, y, z);
-            }
-            else
-            {
-                Debug.LogError("Invalid Vector3 format: " + value);
-                return Vector3.zero; // Значение по умолчанию
-            }
-        }
-        else if (fieldType == typeof(Quaternion))
-        {
-            string[] values = value.Split(',');
-            if (values.Length == 4)
-            {
-                float x = float.Parse(values[0]);
-                float y = float.Parse(values[1]);
-                float z = float.Parse(values[2]);
-                float w = float.Parse(values[3]);
-                return new Quaternion(x, y, z, w);
-            }
-            else
-            {
-                Debug.LogError("Invalid Quaternion format: " + value);
-                return Quaternion.identity; // Значение по умолчанию
-            }
-        }
-        else if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
-        {
-            var listType = fieldType.GetGenericArguments()[0]; // Тип элементов в списке
-            var list = (System.Collections.IList)System.Activator.CreateInstance(fieldType);
-
-            // Если строка представляет список, разделенный запятыми
-            foreach (string item in value.Split(','))
-            {
-                list.Add(ConvertStringToFieldType(item.Trim(), listType));
-            }
-
-            return list;
-        }
-        else if (fieldType.IsArray && fieldType.GetElementType() == typeof(Vector2))
-        {
-            // Обработка массивов Vector2
-            string[] values = value.Split(';');
-            Vector2[] array = new Vector2[values.Length];
-            for (int i = 0; i < values.Length; i++)
-            {
-                string[] parts = values[i].Split(',');
-                array[i] = new Vector2(float.Parse(parts[0]), float.Parse(parts[1]));
-            }
-            return array;
-        }
-
-        // Добавляем исключение для сложных Unity типов
-        if (typeof(Component).IsAssignableFrom(fieldType) || typeof(UnityEngine.Object).IsAssignableFrom(fieldType) ||
-            fieldType == typeof(GameObject) ||
-            fieldType == typeof(Sprite) ||
-            fieldType == typeof(Material) ||
-            fieldType == typeof(CanvasRenderer) ||
-            fieldType == typeof(Canvas) ||
-            fieldType == typeof(Image) ||
-            fieldType == typeof(Button.ButtonClickedEvent) ||
-            fieldType == typeof(Coroutine) ||
-            fieldType == typeof(Mesh) ||
-            fieldType == typeof(UnityEngine.Events.UnityAction) || // Пропускаем UnityAction
-            fieldType == typeof(UnityEngine.UI.Image.FillMethod) || // Пропускаем Image.FillMethod
-            fieldType == typeof(ScreenOrientation) ||
-            fieldType == typeof(System.Action) ||
-            fieldType == typeof(Dictionary<,>) || // Для Dictionary
-            fieldType == typeof(TMP_TextInfo) ||
-            fieldType == typeof(TMP_FontAsset) ||
-            fieldType == typeof(TMP_SpriteAsset) ||
-            fieldType == typeof(TMP_StyleSheet) ||
-            fieldType == typeof(TMP_Style) ||
-            fieldType == typeof(Color32) ||
-            fieldType == typeof(Color) ||
-            fieldType == typeof(Rect) ||
-            fieldType == typeof(Vector4) ||
-            fieldType == typeof(Vector3[]) ||
-            fieldType == typeof(Material[]) ||
-            fieldType == typeof(TMPro.HighlightState) ||
-            fieldType == typeof(TMPro.ColorMode) ||
-            fieldType == typeof(TMPro.VertexGradient) ||
-            fieldType == typeof(TMPro.TMP_ColorGradient) ||
-            fieldType == typeof(TMPro.TMP_Style) ||
-            fieldType == typeof(TMPro.TMP_SpriteAsset))
-        {
-            // Пропускаем компоненты Unity и другие сложные типы
-            Debug.LogWarning($"Skipping unsupported field type: {fieldType} (Unity component or unsupported type)");
-            return null; // Для Unity компонентов возвращаем null
-        }
-
-        // Если тип не поддерживается, логируем ошибку
-        Debug.LogError("Unsupported field type: " + fieldType);
-        return null; // Если тип не поддерживается
-    }
-
-
-
-
-    [System.Serializable]
-    public class SaveData
-    {
-        public List<ObjectSaveData> objectData = new List<ObjectSaveData>();
-    }
-
-    [System.Serializable]
-    public class ObjectSaveData
-    {
-        public string objectName;
-        public List<FieldData> fields = new List<FieldData>();
-    }
-
-    [System.Serializable]
-    public class FieldData
-    {
-        public string fieldName;
-        public string fieldValue;
+        LoadOnNextScene = true;
+        SceneManager.LoadScene(sceneIndex);
     }
 }
