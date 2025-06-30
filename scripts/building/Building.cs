@@ -24,7 +24,6 @@ public class Building : MonoBehaviour
 
     private float rPressedTime = 0f;
 
-    // Новая переменная для точек конвейера
     private Transform[] conveyorPoints;
     private int currentPointIndex = 0;
     [SerializeField] UIManager ManagerUI;
@@ -81,7 +80,6 @@ public class Building : MonoBehaviour
 
         if (input.GetBuildingMode() != lastBuildingMode)
         {
-
             if (input.GetBuildingMode())
             {
                 buildingPanel.SetActive(true);
@@ -106,7 +104,15 @@ public class Building : MonoBehaviour
             if (input.GetRotation())
             {
                 rPressedTime += Time.deltaTime;
-                if (rPressedTime > 0.2f)
+                if (selectedPrefabIndex == 1 && rPressedTime > 0.1f)
+                {
+                    float scroll = Input.GetAxis("Mouse ScrollWheel");
+                    if (scroll != 0)
+                    {
+                        previewObject.transform.Rotate(scroll * 90f, 0, 0);
+                    }
+                }
+                else if (rPressedTime > 0.2f)
                 {
                     playerMovement.lockCamera = true;
                     RotatePreviewObject();
@@ -116,10 +122,6 @@ public class Building : MonoBehaviour
             {
                 if (rPressedTime <= 0.3f && rPressedTime != 0 && previewObject != null)
                 {
-                    if (previewObject.transform.rotation.y % 45 > 0.5f)
-                    {
-                        previewObject.transform.rotation = new Quaternion(0, 0, 0, 0);
-                    }
                     previewObject.transform.Rotate(0, 45f, 0, Space.World);
                 }
                 rPressedTime = 0;
@@ -127,6 +129,7 @@ public class Building : MonoBehaviour
             }
         }
     }
+
 
     void DestroyPreviewObject()
     {
@@ -266,39 +269,48 @@ public class Building : MonoBehaviour
     private void HandleGeneralBuilding(int hotbarIndex, int materialsAmount)
     {
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        RaycastHit hit;
+
+        // Рисуем луч для визуализации в сцене (красный цвет)
         Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
 
-        RaycastHit[] hits = Physics.RaycastAll(ray, maxBuildDistance);
-        RaycastHit? buildableHit = null;
-
-        foreach (var hit in hits)
+        if (Physics.Raycast(ray, out hit, maxBuildDistance, buildableSurface))
         {
-            if (hit.collider.CompareTag("Buildable"))
+            bool isValidSurface = hit.collider.CompareTag("Buildable") && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground");
+
+            // Проверка ограничений для selectedPrefabIndex 4 и 5
+            Debug.Log(hit.collider.gameObject.layer);
+            if ((selectedPrefabIndex == 4 || selectedPrefabIndex == 5) && hit.collider.gameObject.layer != LayerMask.NameToLayer("Gradka"))
             {
-                buildableHit = hit;
-                break;
+                isValidSurface = false;
             }
-        }
+            else
+            {
+                isValidSurface = true;
+            }
 
-        if (buildableHit.HasValue && previewObject != null)
-        {
-            RaycastHit hit = buildableHit.Value;
-            float height = previewObject.transform.localScale.y / 2;
-            Vector3 position = hit.point + Vector3.up * height;
-
+                Vector3 position = hit.point;
+            position.y += GetLowestPointOffset(previewObject);
             position.x = Mathf.Round(position.x / step) * step;
-            position.y = Mathf.Round(position.y / step) * step;
             position.z = Mathf.Round(position.z / step) * step;
-
             previewObject.transform.position = position;
 
-            // Размещение объекта только если есть материалы
-            if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
+            PreviewMaterial(previewObject, isValidSurface ? previewMaterial : invalidMaterial);
+
+            if (isValidSurface && Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
             {
-                PlaceObject(previewObject.transform.position, previewObject.transform.rotation, hotbarIndex);
+                PlaceObject(position, previewObject.transform.rotation, hotbarIndex);
             }
         }
+        else
+        {
+            // Объект вне допустимой зоны
+            previewObject.transform.position = Camera.main.transform.position + Camera.main.transform.forward * maxBuildDistance;
+            PreviewMaterial(previewObject, invalidMaterial);
+        }
     }
+
+
     void PlaceConveyor(Vector3 position, Quaternion rotation, ConveyorSegment conveyorSegment, int hotbarIndex)
     {
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
@@ -476,6 +488,25 @@ public class Building : MonoBehaviour
                 previewObject.transform.Rotate(0, mouseX, 0, Space.World);
             }
         }
+    }
+
+    private float GetLowestPointOffset(GameObject obj)
+    {
+        float lowestY = float.MaxValue;
+
+        foreach (var filter in obj.GetComponentsInChildren<MeshFilter>())
+        {
+            Mesh mesh = filter.sharedMesh;
+            if (mesh == null) continue;
+
+            foreach (var vertex in mesh.vertices)
+            {
+                Vector3 worldPoint = filter.transform.TransformPoint(vertex);
+                lowestY = Mathf.Min(lowestY, worldPoint.y);
+            }
+        }
+
+        return obj.transform.position.y - lowestY;
     }
 }
 
