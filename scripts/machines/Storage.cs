@@ -364,6 +364,41 @@ public class Storage : MonoBehaviour
         }
     }
 
+    // Сохранить все предметы хранилища как prefabIndex + amount
+    public List<Item.SavedInventoryItem> GetSavedItems()
+    {
+        List<Item.SavedInventoryItem> saved = new List<Item.SavedInventoryItem>();
+
+        foreach (var item in storageItems)
+        {
+            if (item == null || item.amount <= 0) continue;
+
+            saved.Add(new Item.SavedInventoryItem
+            {
+                prefabIndex = item.prefabIndex,
+                amount = item.amount
+            });
+        }
+
+        return saved;
+    }
+
+    // Загрузить предметы в хранилище из сохранённых данных
+    public void LoadFromSavedItems(List<Item.SavedInventoryItem> savedItems, SaveManager manager)
+    {
+        InitializeStorage();
+
+        foreach (var saved in savedItems)
+        {
+            Item item = Item.CreateFromPrefabIndex(saved.prefabIndex, saved.amount, manager);
+            if (item != null)
+            {
+                AddItem(item); // использует логику объединения стеков
+            }
+        }
+
+        UpdateStorageUI();
+    }
 
 }
 

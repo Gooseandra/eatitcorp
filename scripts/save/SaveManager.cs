@@ -144,42 +144,9 @@ public class SaveManager : MonoBehaviour
             savedObjects.Add(data);
         }
 
-        // Save the Player
-        if (player != null)
+        if (player.TryGetComponent(out Inventory inv))
         {
-            var data = new SavedObjectData
-            {
-                id = nextId++,
-                prefabIndex = -1,
-                isSceneObject = true,
-                sceneObjectName = "Player",
-                position = player.transform.position,
-                rotation = player.transform.rotation,
-                scale = player.transform.localScale,
-                parentId = null
-            };
-
-            foreach (var script in player.GetComponents<MonoBehaviour>())
-            {
-                var type = script.GetType();
-                if (type == typeof(SaveManager)) continue;
-
-                try
-                {
-                    string json = JsonUtility.ToJson(script);
-                    data.scripts.Add(new ScriptData
-                    {
-                        scriptName = type.AssemblyQualifiedName,
-                        jsonData = json
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Serialization error for {type}: {e.Message}");
-                }
-            }
-
-            savedObjects.Add(data);
+            inv.SaveInventory(this);
         }
 
         string jsonPath = Application.persistentDataPath + "/save.json";
@@ -242,21 +209,10 @@ public class SaveManager : MonoBehaviour
         // Apply transforms
         foreach (var saved in wrapper.objects)
         {
-            GameObject go = null;
+            if (!idToObject.TryGetValue(saved.id, out GameObject go)) continue;
 
-            if (saved.isSceneObject && saved.sceneObjectName == "Player")
-            {
-                go = GameObject.FindGameObjectWithTag("Player");
-            }
-            else if (idToObject.TryGetValue(saved.id, out var obj))
-            {
-                go = obj;
-            }
-
-            if (go == null) continue;
-
-            go.transform.position = saved.position;
-            go.transform.rotation = saved.rotation;
+            go.transform.localPosition = saved.position;
+            go.transform.localRotation = saved.rotation;
             go.transform.localScale = saved.scale;
 
             foreach (var script in saved.scripts)
@@ -269,6 +225,14 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // Загрузка инвентаря игрока
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null && player.TryGetComponent(out Inventory inv))
+        {
+            inv.LoadInventory(this);
+        }
+
+
         Debug.Log("Scene loaded.");
     }
 
@@ -277,4 +241,12 @@ public class SaveManager : MonoBehaviour
         LoadOnNextScene = true;
         SceneManager.LoadScene(sceneIndex);
     }
+
+    public GameObject GetPrefabByIndex(int index)
+    {
+        if (prefabDict.TryGetValue(index, out var prefab))
+            return prefab;
+        return null;
+    }
+
 }

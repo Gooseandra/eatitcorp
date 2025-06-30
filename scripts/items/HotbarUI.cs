@@ -78,7 +78,15 @@ public class HotbarUI : MonoBehaviour
     {
         if (inventory == null) return;
 
-        for (int i = 0; i < 10; i++)
+        int slotCount = Mathf.Min(
+            inventory.hotbar.Count,
+            slotOutlines.Count,
+            slotIcons.Count,
+            slotAmountTexts.Count,
+            10 // максимум 10 слотов
+        );
+
+        for (int i = 0; i < slotCount; i++)
         {
             UpdateSlotVisuals(i);
         }
