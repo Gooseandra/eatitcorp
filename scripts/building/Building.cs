@@ -1,5 +1,5 @@
-using Unity.VisualScripting;
 using UnityEngine;
+using Unity.VisualScripting;
 using UnityEngine.UI;
 
 public class Building : MonoBehaviour
@@ -34,6 +34,17 @@ public class Building : MonoBehaviour
 
     [SerializeField] float step = 1f;
 
+    private Transform conveyorBackPoint;
+    private ConveyorSegment lastHitConveyor = null;
+
+    private bool isDeleteMode = false;
+    private float deleteHoldTime = 1f;
+    private float currentDeleteTimer = 0f;
+    private GameObject objectToDelete = null;
+
+    [SerializeField] GameObject[] allSavePrefabs;
+    Vector3 DeletedPosition;
+
     void Start()
     {
         buildingPanel.SetActive(false);
@@ -65,6 +76,30 @@ public class Building : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            isDeleteMode = !isDeleteMode;
+            if (isDeleteMode)
+            {
+                Debug.Log("Delete Mode Enabled");
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                playerMovement.lockCamera = true;
+            }
+            else
+            {
+                Debug.Log("Delete Mode Disabled");
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                playerMovement.lockCamera = false;
+            }
+        }
+
+        if (isDeleteMode)
+        {
+            HandleDeleteMode();
+        }
+
         if (previewObject != null && input.GetEscape())
         {
             DestroyPreviewObject();
@@ -106,13 +141,27 @@ public class Building : MonoBehaviour
                 rPressedTime += Time.deltaTime;
                 if (selectedPrefabIndex == 1 && rPressedTime > 0.1f)
                 {
-                    float scroll = Input.GetAxis("Mouse ScrollWheel");
-                    if (scroll != 0)
+                    Vector3 pivot = new Vector3(conveyorBackPoint.position.x, conveyorBackPoint.position.y, conveyorBackPoint.position.z); // мировая позиция до вращения
+                    playerMovement.lockCamera = true;
+                    float mouseScroll = Input.GetAxis("Mouse ScrollWheel");
+                    if (mouseScroll != 0)
                     {
-                        previewObject.transform.Rotate(scroll * 90f, 0, 0);
+                        float rotationAngle = mouseScroll * 10f;
+
+                        Vector3 localRotationAxis = previewObject.transform.forward; // Или .up, в зависимости от модели
+
+                        previewObject.transform.RotateAround(pivot, localRotationAxis, rotationAngle);
+                        previewObject.transform.position = new Vector3(previewObject.transform.position.x, previewObject.transform.position.y, previewObject.transform.position.z);
+                        Debug.Log($"Rotated conveyor around BackPoint by {rotationAngle} degrees, position corrected");
                     }
+                    else
+                    {
+                        Debug.LogWarning("BackPoint not found on previewObject!");
+                    }
+                    Debug.DrawRay(pivot, Vector3.right * 2f, Color.red, 2f); // Ось вращения (X)
+                    Debug.DrawRay(pivot, previewObject.transform.right * 2f, Color.blue, 2f); // Ось объекта
                 }
-                else if (rPressedTime > 0.2f)
+                else if (rPressedTime > 0.2f && selectedPrefabIndex != 1)
                 {
                     playerMovement.lockCamera = true;
                     RotatePreviewObject();
@@ -120,12 +169,37 @@ public class Building : MonoBehaviour
             }
             else
             {
-                if (rPressedTime <= 0.3f && rPressedTime != 0 && previewObject != null)
+                if (rPressedTime <= 0.3f && rPressedTime != 0 && previewObject != null && selectedPrefabIndex != 1)
                 {
                     previewObject.transform.Rotate(0, 45f, 0, Space.World);
                 }
                 rPressedTime = 0;
                 playerMovement.lockCamera = false;
+
+                // Поворот конвейера на 90 градусов при прокрутке колесика
+                if (selectedPrefabIndex == 1 && previewObject != null)
+                {
+                    float scroll = Input.GetAxis("Mouse ScrollWheel");
+                    if (scroll != 0)
+                    {
+                        conveyorBackPoint.SetParent(previewObject.transform);
+
+                        Debug.Log($"Mouse scroll: {scroll}");
+                        // Фиксированный поворот на 90 градусов
+                        float currentY = previewObject.transform.rotation.eulerAngles.y;
+                        float newY = Mathf.Round((currentY + Mathf.Sign(scroll) * 90f) / 90f) * 90f;
+                        previewObject.transform.rotation = Quaternion.Euler(
+                            previewObject.transform.rotation.eulerAngles.x,
+                            newY,
+                            previewObject.transform.rotation.eulerAngles.z
+                        );
+                        Debug.Log($"Rotated conveyor to Y angle: {newY}");
+
+                        Vector3 worldPosition = previewObject.transform.TransformPoint(new Vector3(-0.5f, 0, 0));
+                        conveyorBackPoint.SetParent(null);
+                        conveyorBackPoint.position = worldPosition;
+                    }
+                }
             }
         }
     }
@@ -134,8 +208,13 @@ public class Building : MonoBehaviour
     void DestroyPreviewObject()
     {
         Destroy(previewObject);
+        if (conveyorBackPoint != null)
+        {
+            Destroy(conveyorBackPoint.gameObject);
+        }
         previewObject = null;
         selectedPrefabIndex = -1;
+        lastHitConveyor = null;
     }
 
     void SelectPrefab(int index)
@@ -163,6 +242,12 @@ public class Building : MonoBehaviour
         }
 
         previewObject = Instantiate(buildablePrefabs[selectedPrefabIndex]);
+
+        if (selectedPrefabIndex == 1)
+        {
+            conveyorBackPoint = previewObject.transform.Find("BackPoint");
+            conveyorBackPoint.SetParent(null);
+        }
 
         // Отключаем ВСЕ коллайдеры (обычные и триггеры)
         SetAllCollidersEnabled(previewObject, false);
@@ -230,39 +315,40 @@ public class Building : MonoBehaviour
         if (conveyorHit.HasValue && previewObject != null)
         {
             RaycastHit hit = conveyorHit.Value;
-            float height = previewObject.transform.localScale.y / 2;
-            Vector3 position = hit.point + Vector3.up * height;
+            ConveyorSegment conveyorSegment = hit.collider.GetComponent<ConveyorSegment>();
 
-            ConveyorSegment oldConveuor = hit.collider.GetComponent<ConveyorSegment>();
-            UpdateConveyorPosition(oldConveuor);
+            // Обновляем позицию конвейера относительно предыдущего сегмента
+            UpdateConveyorPosition(conveyorSegment);
 
             // Размещение объекта только если есть материалы
             if (Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
             {
-                PlaceConveyor(previewObject.transform.position, previewObject.transform.rotation, oldConveuor, hotbarIndex);
+                PlaceConveyor(previewObject.transform.position, previewObject.transform.rotation, conveyorSegment, hotbarIndex);
             }
         }
         else if (groundHit.HasValue && previewObject != null)
         {
-            // Если не смотрим на конвейер, но смотрим на землю, показываем preview на земле
+            lastHitConveyor = null;
             RaycastHit hit = groundHit.Value;
-
             float height = previewObject.transform.localScale.y / 2;
             Vector3 position = hit.point + Vector3.up * height;
-
-            // Обновляем позицию конвейера
             previewObject.transform.position = position;
-
-            // Применяем материал, который показывает, что объект нельзя разместить
             PreviewMaterial(previewObject, invalidMaterial);
         }
         else
         {
-            // Если не смотрим на землю или конвейер, просто показываем объект в обычной позиции
             previewObject.transform.position = Camera.main.transform.position + Camera.main.transform.forward * maxBuildDistance;
-
-            // Применяем материал, который показывает, что объект нельзя разместить
             PreviewMaterial(previewObject, invalidMaterial);
+        }
+    }
+
+    private void DeleteWays(GameObject placedObject)
+    {
+        Transform wayTransform = placedObject.transform.Find("way");
+        if (wayTransform != null)
+        {
+            Destroy(wayTransform.gameObject);
+            Debug.Log("Removed 'way' child object after placement");
         }
     }
 
@@ -289,7 +375,7 @@ public class Building : MonoBehaviour
                 isValidSurface = true;
             }
 
-                Vector3 position = hit.point;
+            Vector3 position = hit.point;
             position.y += GetLowestPointOffset(previewObject);
             position.x = Mathf.Round(position.x / step) * step;
             position.z = Mathf.Round(position.z / step) * step;
@@ -314,6 +400,7 @@ public class Building : MonoBehaviour
     void PlaceConveyor(Vector3 position, Quaternion rotation, ConveyorSegment conveyorSegment, int hotbarIndex)
     {
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
+        DeleteWays(placedObject);
         placedObject.tag = "Placed";
         SetAllCollidersEnabled(placedObject, true);
         RemoveCollisionScriptFromObject(placedObject);
@@ -322,30 +409,21 @@ public class Building : MonoBehaviour
 
         if (roadTransform != null)
         {
-            // Теперь roadTransform указывает на дочерний объект с именем "road"
-            ConveyorSegment cs = roadTransform.GetComponent<ConveyorSegment>();
-            switch (currentPointIndex)
+            ConveyorSegment newSegment = roadTransform.GetComponent<ConveyorSegment>();
+
+            // Устанавливаем связь между сегментами
+            if (currentPointIndex == 0)
             {
-                case 0:
-                    conveyorSegment.SetNextSegment(cs);
-                    break;
-                case 1:
-                    cs.SetNextSegment(conveyorSegment);
-                    break;
-                case 2:
-                    cs.SetNextSegment(conveyorSegment);
-                    break;
-                case 3:
-                    cs.SetNextSegment(conveyorSegment);
-                    break;
-                default:
-                    break;
+                conveyorSegment.SetNextSegment(newSegment);
             }
+            else
+            {
+                newSegment.SetNextSegment(conveyorSegment);
+            }
+
             inventory.RemoveByIndex(hotbarIndex);
             SetAllCollidersEnabled(placedObject, true);
             SetTriggerEnabled(placedObject, false);
-
-            // Возвращаем стандартные материалы
         }
         else
         {
@@ -358,7 +436,7 @@ public class Building : MonoBehaviour
     {
         GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
         placedObject.tag = "Placed";
-
+        DeleteWays(placedObject);
         // Включаем только обычные коллайдеры (триггеры остаются выключенными)
         SetAllCollidersEnabled(placedObject, true); // Обычные коллайдеры
         SetTriggerEnabled(placedObject, false);  // Триггеры (если не нужны)
@@ -402,53 +480,31 @@ public class Building : MonoBehaviour
 
     private void UpdateConveyorPosition(ConveyorSegment conveyorSegment)
     {
-        // Получаем точки конвейера
-        conveyorPoints = conveyorSegment.GetNextPoints();
-
-        if (conveyorPoints.Length > 0)
+        if (conveyorSegment != lastHitConveyor)
         {
-            // Получаем позицию следующей точки
-            previewObject.transform.position = conveyorPoints[currentPointIndex].position;
+            lastHitConveyor = conveyorSegment;
 
-            // Получаем поворот текущего сегмента
-            Quaternion currentSegmentRotation = conveyorSegment.transform.rotation;
+            conveyorPoints = conveyorSegment.GetNextPoints();
 
-            // Применяем поворот относительно текущего сегмента
-            if (currentPointIndex == 2 || currentPointIndex == 3)
+            if (conveyorPoints.Length > 0)
             {
-                previewObject.transform.rotation = currentSegmentRotation * Quaternion.Euler(0f, 90f, 0f);
+                // Сохраняем текущую точку соединения
+                Vector3 connectionPoint = conveyorPoints[currentPointIndex].position;
+
+                // Позиционируем preview на выбранной точке
+                previewObject.transform.position = connectionPoint;
             }
-            else
+
+            // Обновляем позицию BackPoint только один раз при смене сегмента
+            if (conveyorBackPoint != null)
             {
-                if (input.GetRotation()) // Если нажата клавиша для поворота
-                {
-                    // Отслеживаем прокрутку колеса мыши
-                    float scrollInput = Input.GetAxis("Mouse ScrollWheel");
-
-                    if (scrollInput != 0f) // Если прокрутка колесика мыши есть
-                    {
-                        // Поворот объекта на 90 градусов
-                        previewObject.transform.Rotate(0f, 90f * Mathf.Sign(scrollInput), 0f, Space.Self);
-                    }
-                }
-                else
-                {
-                    previewObject.transform.rotation = currentSegmentRotation * Quaternion.Euler(0f, 0f, 0f);
-                }
+                conveyorBackPoint.SetParent(previewObject.transform);
+                Vector3 worldPosition = previewObject.transform.TransformPoint(new Vector3(-0.5f, 0, 0));
+                conveyorBackPoint.SetParent(null);
+                conveyorBackPoint.position = worldPosition;
             }
-        }
-
-        // Логика для прокрутки колесика мыши
-        if (!input.GetRotation() && Input.GetAxis("Mouse ScrollWheel") > 0f) // Прокрутка колесика вверх
-        {
-            currentPointIndex = (currentPointIndex + 1) % conveyorPoints.Length;
-        }
-        else if (!input.GetRotation() && Input.GetAxis("Mouse ScrollWheel") < 0f) // Прокрутка колесика вниз
-        {
-            currentPointIndex = (currentPointIndex - 1 + conveyorPoints.Length) % conveyorPoints.Length;
         }
     }
-
 
     public void IncrementPlacedObjectsCount()
     {
@@ -508,6 +564,102 @@ public class Building : MonoBehaviour
 
         return obj.transform.position.y - lowestY;
     }
+
+    private void HandleDeleteMode()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        if (Physics.Raycast(ray, out RaycastHit hit, maxBuildDistance))
+        {
+            GameObject target = hit.collider.gameObject;
+
+            // Проверка на удаляемый объект
+            if (target.CompareTag("Placed"))
+            {
+                if (Input.GetMouseButton(0))
+                {
+                    if (objectToDelete == target)
+                    {
+                        currentDeleteTimer += Time.deltaTime;
+
+                        if (currentDeleteTimer >= deleteHoldTime)
+                        {
+                            if (ReturnItemToInventory(target))
+                            {
+                                Destroy(target);
+                                Debug.Log("Object deleted and item returned to inventory.");
+                            }
+                            else
+                            {
+                                Debug.Log("cannot add item to inventory.");
+                            }
+                                currentDeleteTimer = 0f;
+                            objectToDelete = null;
+                        }
+                    }
+                    else
+                    {
+                        objectToDelete = target;
+                        currentDeleteTimer = 0f;
+                    }
+                }
+                else
+                {
+                    currentDeleteTimer = 0f;
+                    objectToDelete = null;
+                }
+            }
+        }
+        else
+        {
+            currentDeleteTimer = 0f;
+            objectToDelete = null;
+        }
+    }
+
+
+    private bool ReturnItemToInventory(GameObject obj)
+    {
+        string objName = obj.name.Replace("(Clone)", "").Trim();
+
+        int prefabIndex = -1;
+        for (int i = 0; i < buildablePrefabs.Length; i++)
+        {
+            if (buildablePrefabs[i].name == objName)
+            {
+                prefabIndex = i;
+                break;
+            }
+        }
+
+        if (prefabIndex != -1)
+        {
+            return AddByBuildingIndex(prefabIndex, 1);
+        }
+        else
+        {
+            Debug.LogWarning($"Couldn't find prefab match for {objName}, not returned to inventory.");
+            return false;
+        }
+    }
+
+    public bool AddByBuildingIndex(int buildingIndex, int amount)
+    {
+        GameObject go = FindPrefabByBuildingIndex(buildingIndex);
+        ItemPickup item = go.GetComponent<ItemPickup>();
+        return inventory.AddItem(item.item);
+    }
+
+    public GameObject FindPrefabByBuildingIndex(int index)
+    {
+        foreach (var prefab in allSavePrefabs)
+        {
+            ItemPickup pickup = prefab.GetComponent<ItemPickup>();
+            if (pickup != null && pickup.item != null && pickup.item.buildingIndex == index)
+            {
+                return prefab;
+            }
+        }
+        return null;
+    }
+
 }
-
-
