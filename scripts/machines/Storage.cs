@@ -34,21 +34,20 @@ public class Storage : MonoBehaviour
     [Header("Initial Storage Items")]
     public List<InitialStorageItem> initialItems = new List<InitialStorageItem>();
 
-    private void Awake()
+    private bool initialized = false;
+
+    private void FixedUpdate()
     {
-        if (playerMovement == null)
-            playerMovement = Object.FindAnyObjectByType<Movement>();
-
-        if (playerInventory == null)
-            playerInventory = Object.FindAnyObjectByType<Inventory>();
-
-        if (storageUIParent == null)
+        if (!initialized)
         {
-            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-            if (canvas != null)
-                storageUIParent = canvas.transform;
+            TryInitialize();
         }
+    }
 
+
+
+    private void Start()
+    {
         InitializeStorage();
 
         SetInitItems();
@@ -83,6 +82,47 @@ public class Storage : MonoBehaviour
 
                 AddItem(itemCopy);
             }
+        }
+    }
+
+    private void TryInitialize()
+    {
+        // Убедись, что всё нужное на сцене уже появилось
+        if (playerInventory == null)
+            playerInventory = Object.FindAnyObjectByType<Inventory>();
+
+        if (playerMovement == null)
+            playerMovement = Object.FindAnyObjectByType<Movement>();
+
+        if (storageUIParent == null)
+        {
+            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+            if (canvas != null)
+                storageUIParent = canvas.transform;
+        }
+
+        if (spawnPos == null)
+        {
+            Transform found = transform.GetComponentInChildren<Transform>(true);
+            foreach (Transform child in GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == "spawnPos")
+                {
+                    spawnPos = child;
+                    break;
+                }
+            }
+        }
+
+        if (conveyorStartSegment == null)
+            conveyorStartSegment = GetComponentInChildren<ConveyorSegment>();
+
+        if (playerInventory != null && playerMovement != null && storageUIParent != null && spawnPos != null)
+        {
+            InitializeStorage();
+            SetInitItems();
+            initialized = true;
+            Debug.Log("Storage инициализирован.");
         }
     }
 
@@ -368,36 +408,57 @@ public class Storage : MonoBehaviour
     public List<Item.SavedInventoryItem> GetSavedItems()
     {
         List<Item.SavedInventoryItem> saved = new List<Item.SavedInventoryItem>();
-
         foreach (var item in storageItems)
         {
-            if (item == null || item.amount <= 0) continue;
-
-            saved.Add(new Item.SavedInventoryItem
+            if (item != null && item.amount > 0)
             {
-                prefabIndex = item.prefabIndex,
-                amount = item.amount
-            });
+                saved.Add(new Item.SavedInventoryItem
+                {
+                    prefabIndex = item.prefabIndex,
+                    amount = item.amount
+                });
+            }
         }
-
         return saved;
     }
 
-    // Загрузить предметы в хранилище из сохранённых данных
     public void LoadFromSavedItems(List<Item.SavedInventoryItem> savedItems, SaveManager manager)
     {
-        InitializeStorage();
+        initialItems.Clear();
 
         foreach (var saved in savedItems)
         {
-            Item item = Item.CreateFromPrefabIndex(saved.prefabIndex, saved.amount, manager);
-            if (item != null)
+            GameObject prefab = manager.GetPrefabByIndex(saved.prefabIndex);
+            if (prefab == null)
             {
-                AddItem(item); // использует логику объединения стеков
+                Debug.LogWarning($"Prefab index {saved.prefabIndex} не найден в SaveManager.");
+                continue;
+            }
+
+            int remaining = saved.amount;
+            ItemPickup pickup = prefab.GetComponent<ItemPickup>();
+            if (pickup == null || pickup.item == null)
+            {
+                Debug.LogWarning($"Prefab {prefab.name} не содержит ItemPickup или сам Item не задан.");
+                continue;
+            }
+
+            int stackSize = pickup.item.maxStack;
+
+            while (remaining > 0)
+            {
+                int amountInStack = Mathf.Min(remaining, stackSize);
+
+                initialItems.Add(new InitialStorageItem
+                {
+                    itemPrefab = prefab,
+                    stacksCount = 1,
+                    amountPerStack = amountInStack
+                });
+
+                remaining -= amountInStack;
             }
         }
-
-        UpdateStorageUI();
     }
 
 }

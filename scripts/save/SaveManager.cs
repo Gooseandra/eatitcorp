@@ -121,6 +121,7 @@ public class SaveManager : MonoBehaviour
                             : (int?)null
             };
 
+            // Сохраняем MonoBehaviour скрипты (включая Storage)
             foreach (var script in go.GetComponents<MonoBehaviour>())
             {
                 var type = script.GetType();
@@ -141,9 +142,22 @@ public class SaveManager : MonoBehaviour
                 }
             }
 
+            // Хранилище — сохраняем его вручную
+            if (go.TryGetComponent(out Storage storage))
+            {
+                var storedItems = storage.GetSavedItems(); // твой метод
+                string json = JsonUtility.ToJson(new ItemListWrapper { items = storedItems });
+                data.scripts.Add(new ScriptData
+                {
+                    scriptName = typeof(Storage).AssemblyQualifiedName + "_StorageItems",
+                    jsonData = json
+                });
+            }
+
             savedObjects.Add(data);
         }
 
+        // Сохраняем инвентарь игрока
         if (player.TryGetComponent(out Inventory inv))
         {
             inv.SaveInventory(this);
@@ -173,7 +187,6 @@ public class SaveManager : MonoBehaviour
 
         Dictionary<int, GameObject> idToObject = new Dictionary<int, GameObject>();
 
-        // Instantiate normal objects
         foreach (var saved in wrapper.objects)
         {
             if (saved.isSceneObject) continue;
@@ -187,17 +200,34 @@ public class SaveManager : MonoBehaviour
             GameObject go = Instantiate(prefab);
             idToObject[saved.id] = go;
 
+            // Восстанавливаем компоненты
             foreach (var script in saved.scripts)
             {
+                if (script.scriptName.EndsWith("_StorageItems")) continue;
+
                 var type = Type.GetType(script.scriptName);
                 if (type == null) continue;
 
                 var comp = go.GetComponent(type) ?? go.AddComponent(type);
                 JsonUtility.FromJsonOverwrite(script.jsonData, comp);
             }
+
+            // Восстанавливаем предметы хранилища
+            var storageScript = go.GetComponent<Storage>();
+            if (storageScript != null)
+            {
+                foreach (var script in saved.scripts)
+                {
+                    if (script.scriptName == typeof(Storage).AssemblyQualifiedName + "_StorageItems")
+                    {
+                        var wrapperObj = JsonUtility.FromJson<ItemListWrapper>(script.jsonData);
+                        storageScript.LoadFromSavedItems(wrapperObj.items, this);
+                    }
+                }
+            }
         }
 
-        // Apply parent relationships
+        // Устанавливаем родительские связи
         foreach (var saved in wrapper.objects)
         {
             if (saved.parentId.HasValue && idToObject.ContainsKey(saved.parentId.Value) && idToObject.ContainsKey(saved.id))
@@ -206,32 +236,21 @@ public class SaveManager : MonoBehaviour
             }
         }
 
-        // Apply transforms
+        // Устанавливаем трансформации
         foreach (var saved in wrapper.objects)
         {
             if (!idToObject.TryGetValue(saved.id, out GameObject go)) continue;
-
             go.transform.localPosition = saved.position;
             go.transform.localRotation = saved.rotation;
             go.transform.localScale = saved.scale;
-
-            foreach (var script in saved.scripts)
-            {
-                var type = Type.GetType(script.scriptName);
-                if (type == null) continue;
-
-                var comp = go.GetComponent(type) ?? go.AddComponent(type);
-                JsonUtility.FromJsonOverwrite(script.jsonData, comp);
-            }
         }
 
-        // Загрузка инвентаря игрока
+        // Загружаем инвентарь игрока
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null && player.TryGetComponent(out Inventory inv))
         {
             inv.LoadInventory(this);
         }
-
 
         Debug.Log("Scene loaded.");
     }
@@ -244,9 +263,13 @@ public class SaveManager : MonoBehaviour
 
     public GameObject GetPrefabByIndex(int index)
     {
-        if (prefabDict.TryGetValue(index, out var prefab))
-            return prefab;
-        return null;
+        prefabDict.TryGetValue(index, out var prefab);
+        return prefab;
     }
 
+    [Serializable]
+    public class ItemListWrapper
+    {
+        public List<Item.SavedInventoryItem> items;
+    }
 }
