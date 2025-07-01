@@ -3,26 +3,25 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] GameObject HelpManu;
+    [SerializeField] GameObject HelpMenu;
+    [SerializeField] GameObject LoadMenu;
+    [SerializeField] GameObject SettingsMenu;
 
     [SerializeField] GameObject BuildingHelp;
     [SerializeField] GameObject FactoringHelp;
     [SerializeField] GameObject DeliverenceHelp;
-    public void OnLoadGameClicked()
-    {
-        SaveManager.LoadOnNextScene = true;
-        SceneManager.LoadScene(2);
-    }
 
     public void OnToMenuClicked()
     {
         SaveManager.LoadOnNextScene = true;
-        SceneManager.LoadScene(1);
+        SceneManager.LoadScene(0);
     }
 
-    public void OnNewGGameClicked()
+    public void OnPlayClicked()
     {
-        SceneManager.LoadScene(2);
+        LoadMenu.SetActive(!LoadMenu.activeSelf);
+        SettingsMenu.SetActive(false);
+        HelpMenu.SetActive(false);
     }
 
     public void OnQuitClicked()
@@ -32,10 +31,20 @@ public class MainMenu : MonoBehaviour
 
     public void OnHelpClicked()
     {
-        HelpManu.SetActive(!HelpManu.activeSelf);
+        HelpMenu.SetActive(!HelpMenu.activeSelf);
+        SettingsMenu.SetActive(false);
+        LoadMenu.SetActive(false);
     }
 
-    public void OnBuildingHelpClicked() {
+    public void OnSettingsClicked()
+    {
+        SettingsMenu.SetActive(!SettingsMenu.activeSelf);
+        HelpMenu.SetActive(false);
+        LoadMenu.SetActive(false);
+    }
+
+    public void OnBuildingHelpClicked()
+    {
         BuildingHelp.SetActive(true);
         FactoringHelp.SetActive(false);
         DeliverenceHelp.SetActive(false);

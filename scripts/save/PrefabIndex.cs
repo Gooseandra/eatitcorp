@@ -6,6 +6,10 @@ public class PrefabIndex : MonoBehaviour
 
     private void Start()
     {
-        GetComponent<ItemPickup>().item.prefabIndex = index;
+        ItemPickup item = GetComponent<ItemPickup>();
+        if (item != null)
+        {
+            item.item.prefabIndex = index;
+        }
     }
 }

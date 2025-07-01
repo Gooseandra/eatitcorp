@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using UnityEngine.SceneManagement;
+using System.Collections;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -10,6 +12,8 @@ using UnityEditor;
 public class SaveManager : MonoBehaviour
 {
     public static bool LoadOnNextScene = false;
+    public static int currentSaveSlot = 0; // по умолчанию слот 0
+
 
     [Serializable]
     public class ScriptData
@@ -44,30 +48,25 @@ public class SaveManager : MonoBehaviour
     {
         prefabDict = new Dictionary<int, GameObject>();
 
-#if UNITY_EDITOR
-        string[] guids = AssetDatabase.FindAssets("t:prefab", new[] { "Assets/SavePrefabs" });
-
-        foreach (string guid in guids)
+        GameObject[] prefabs = Resources.LoadAll<GameObject>("SavePrefabs");
+        foreach (var prefab in prefabs)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (prefab != null)
+            var indexComp = prefab.GetComponent<PrefabIndex>();
+            if (indexComp != null)
             {
-                var indexComp = prefab.GetComponent<PrefabIndex>();
-                if (indexComp != null)
-                {
-                    int index = indexComp.index;
-                    if (!prefabDict.ContainsKey(index))
-                        prefabDict.Add(index, prefab);
-                    else
-                        Debug.LogWarning($"Duplicate prefab index {index} at {path}");
-                }
+                int index = indexComp.index;
+                if (!prefabDict.ContainsKey(index))
+                    prefabDict.Add(index, prefab);
+                else
+                    Debug.LogWarning($"Duplicate prefab index {index} in {prefab.name}");
+            }
+            else
+            {
+                Debug.LogWarning($"Prefab {prefab.name} missing PrefabIndex component");
             }
         }
-#else
-        Debug.LogError("Prefab loading only works in the editor.");
-#endif
     }
+
 
     private void Start()
     {
@@ -163,16 +162,69 @@ public class SaveManager : MonoBehaviour
             inv.SaveInventory(this);
         }
 
-        string jsonPath = Application.persistentDataPath + "/save.json";
+        string jsonPath = GetSaveFilePath();
+
         File.WriteAllText(jsonPath, JsonUtility.ToJson(new SaveWrapper { objects = savedObjects }));
+
+        var meta = new SaveMeta { saveDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm") };
+        string metaPath = GetMetaFilePath();
+        File.WriteAllText(metaPath, JsonUtility.ToJson(meta));
+
+        // Сохраняем скриншот
+        StartCoroutine(SaveScreenshot(currentSaveSlot));
+
         Debug.Log("Scene saved: " + jsonPath);
     }
 
+    private string GetMetaFilePath()
+    {
+        return Path.Combine(Application.persistentDataPath, $"save_{currentSaveSlot}.meta.json");
+    }
+
+    private string GetScreenshotPath(int slot)
+    {
+        return Path.Combine(Application.persistentDataPath, $"save_{slot}.png");
+    }
+
+    private IEnumerator SaveScreenshot(int slot)
+    {
+        yield return new WaitForEndOfFrame();
+
+        Camera cam = Camera.main;
+        RenderTexture rt = new RenderTexture(Screen.width, Screen.height, 24);
+        cam.targetTexture = rt;
+
+        RenderTexture oldRT = RenderTexture.active;
+        RenderTexture.active = rt;
+
+        cam.Render();
+
+        Texture2D screenshot = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+        screenshot.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+        screenshot.Apply();
+
+        cam.targetTexture = null;
+        RenderTexture.active = oldRT;
+        Destroy(rt);
+
+        byte[] bytes = screenshot.EncodeToPNG();
+        File.WriteAllBytes(GetScreenshotPath(slot), bytes);
+        Destroy(screenshot);
+    }
+
+
+    private string GetSaveFilePath()
+    {
+        return Path.Combine(Application.persistentDataPath, $"save_{currentSaveSlot}.json");
+    }
+
+
     public void LoadScene()
     {
-        string jsonPath = Application.persistentDataPath + "/save.json";
+        string jsonPath = GetSaveFilePath();
         if (!File.Exists(jsonPath))
         {
+            SceneManager.LoadScene(2);
             Debug.LogError("Save file not found.");
             return;
         }
@@ -290,4 +342,11 @@ public class SaveManager : MonoBehaviour
     {
         public List<Item.SavedInventoryItem> items;
     }
+
+    [Serializable]
+    public class SaveMeta
+    {
+        public string saveDate;
+    }
+
 }
