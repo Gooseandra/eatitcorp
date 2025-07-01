@@ -14,6 +14,12 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene(2);
     }
 
+    public void OnToMenuClicked()
+    {
+        SaveManager.LoadOnNextScene = true;
+        SceneManager.LoadScene(1);
+    }
+
     public void OnNewGGameClicked()
     {
         SceneManager.LoadScene(2);

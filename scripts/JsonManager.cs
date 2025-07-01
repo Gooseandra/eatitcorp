@@ -46,31 +46,56 @@ public class JsonManager : MonoBehaviour
     // Проверка, соответствуют ли ингредиенты какому-либо рецепту
     public string CheckRecipes(List<string> ingredients)
     {
+        // Сначала проверяем полные совпадения с рецептами
         foreach (var recipe in recipes)
         {
-            // Проверяем, сколько ингредиентов из рецепта есть в текущем списке
-            int matchCount = 0;
+            bool fullMatch = true;
+
+            // Проверяем, все ли ингредиенты рецепта есть в списке
             foreach (var ingredient in recipe.ingredients)
             {
-                if (ingredients.Contains(ingredient))
+                if (!ingredients.Contains(ingredient))
                 {
-                    matchCount++;
+                    fullMatch = false;
+                    break;
                 }
             }
 
-            // Если все ингредиенты рецепта присутствуют, возвращаем результат
-            if (matchCount == recipe.ingredients.Count)
+            // Если все ингредиенты рецепта присутствуют И количество ингредиентов совпадает
+            if (fullMatch && recipe.ingredients.Count == ingredients.Count)
             {
                 return recipe.name;
             }
-            // Если хотя бы один ингредиент совпадает, возвращаем "заготовка"
-            else if (matchCount > 0)
+        }
+
+        // Проверяем частичные совпадения (только если ВСЕ ингредиенты входят в какой-то рецепт)
+        bool allIngredientsValid = true;
+        foreach (var ingredient in ingredients)
+        {
+            bool foundInAnyRecipe = false;
+            foreach (var recipe in recipes)
             {
-                return "Заготовка";
+                if (recipe.ingredients.Contains(ingredient))
+                {
+                    foundInAnyRecipe = true;
+                    break;
+                }
+            }
+
+            if (!foundInAnyRecipe)
+            {
+                allIngredientsValid = false;
+                break;
             }
         }
 
-        // Если ни один рецепт не совпадает, возвращаем null
+        // Если все ингредиенты валидны, но не составляют полный рецепт
+        if (allIngredientsValid && ingredients.Count > 0)
+        {
+            return "Заготовка";
+        }
+
+        // Если есть хотя бы один невалидный ингредиент
         return null;
     }
 

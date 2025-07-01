@@ -25,7 +25,6 @@ public class Item
         this.timeToGrow = timeToGrow;
         prefabIndex = prefab.GetComponent<PrefabIndex>().index;
     }
-
     public bool CanStack()
     {
         return amount < maxStack;

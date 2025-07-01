@@ -25,7 +25,13 @@ public class Input_manager : MonoBehaviour
     [SerializeField] bool OpenBuildingWindow;
 
     private bool buildingModeToggle = false;
-    private bool isCameraLocked = false;
+
+    [SerializeField] GameObject Menu;
+    [SerializeField] GameObject BuildingUI;
+    [SerializeField] GameObject TerminalUI;
+    [SerializeField] Movement movement;
+
+    private bool lastEscape = false;
 
     private void Start()
     {
@@ -59,6 +65,25 @@ public class Input_manager : MonoBehaviour
         {
             LockCamera(false);
         }
+
+        if (Input.GetKey(EscapeKeyCode) || Input.GetKey(EscapeKeyCode) != lastEscape) {
+            lastEscape = true;
+            if ( BuildingUI.activeSelf || TerminalUI.activeSelf)
+            {
+                BuildingUI.SetActive(false);
+                TerminalUI.SetActive(false);
+                LockCursor();
+            }
+            else{
+
+                UnlockCursor();
+                Menu.SetActive(true);
+                LockCamera(true);
+            }
+        }
+        if (!Input.GetKey(EscapeKeyCode)) {
+            lastEscape = false;
+        }
     }
 
     void SetDefaultKeyCodesValues()
@@ -89,12 +114,19 @@ public class Input_manager : MonoBehaviour
     // Ѕлокирует или разблокирует камеру
     public void LockCamera(bool isLocked)
     {
-        isCameraLocked = isLocked;
+         movement.lockCamera = isLocked;
     }
 
-    // ¬озвращает состо€ние блокировки камеры
-    public bool IsCameraLocked()
+   public void LockCursor()
     {
-        return isCameraLocked;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
+
+    public void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
 }

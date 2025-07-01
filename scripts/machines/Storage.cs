@@ -132,11 +132,6 @@ public class Storage : MonoBehaviour
         {
             CloseStorage();
         }
-        // Закрытие UI и другое уже есть
-        if (isUIOpen && (Input.GetKeyDown(KeyCode.Escape) || !IsPlayerLookingAtStorage()))
-        {
-            CloseStorage();
-        }
 
         conveyorCheckTimer -= Time.deltaTime;
         if (conveyorCheckTimer <= 0f)

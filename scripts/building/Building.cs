@@ -1,6 +1,8 @@
 using UnityEngine;
 using Unity.VisualScripting;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using System.Collections;
 
 public class Building : MonoBehaviour
 {
@@ -26,7 +28,7 @@ public class Building : MonoBehaviour
 
     private Transform[] conveyorPoints;
     private int currentPointIndex = 0;
-    [SerializeField] UIManager ManagerUI;
+    [SerializeField] MessageManager ManagerUI;
 
     public Inventory inventory;
 
@@ -43,10 +45,20 @@ public class Building : MonoBehaviour
     private GameObject objectToDelete = null;
 
     [SerializeField] GameObject[] allSavePrefabs;
-    Vector3 DeletedPosition;
+    [SerializeField] private Material highlightMaterial;
+
+    // Для хранения исходных материалов
+    private GameObject lastHighlightedObject = null;
+    private readonly Dictionary<Renderer, Material[]> originalMaterials = new();
+
+    [SerializeField] private GameObject aim;
+    private Animator aimAnimator;
+    private bool isDeletingAnimPlaying = false;
+
 
     void Start()
     {
+        aimAnimator = aim.GetComponent<Animator>();
         buildingPanel.SetActive(false);
 
         for (int i = 0; i < buildButtons.Length; i++)
@@ -79,21 +91,22 @@ public class Building : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F))
         {
             isDeleteMode = !isDeleteMode;
+
             if (isDeleteMode)
             {
                 Debug.Log("Delete Mode Enabled");
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                playerMovement.lockCamera = true;
+                PlayDeleteAnimation("Delete");
             }
             else
             {
+                ResetHighlight();
                 Debug.Log("Delete Mode Disabled");
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-                playerMovement.lockCamera = false;
+                currentDeleteTimer = 0f;
+                objectToDelete = null;
+                PlayDeleteAnimation("DeleteDeactivation");
             }
         }
+
 
         if (isDeleteMode)
         {
@@ -572,9 +585,17 @@ public class Building : MonoBehaviour
         {
             GameObject target = hit.collider.gameObject;
 
-            // Проверка на удаляемый объект
+            // Если объект под курсором больше не тот, что был подсвечен — сбрасываем старый
+            if (target != lastHighlightedObject)
+            {
+                ResetHighlight();
+            }
+
+            // Подсвечиваем только "Placed"
             if (target.CompareTag("Placed"))
             {
+                HighlightObject(target);
+
                 if (Input.GetMouseButton(0))
                 {
                     if (objectToDelete == target)
@@ -590,10 +611,12 @@ public class Building : MonoBehaviour
                             }
                             else
                             {
-                                Debug.Log("cannot add item to inventory.");
+                                Debug.Log("Cannot add item to inventory.");
                             }
-                                currentDeleteTimer = 0f;
+
+                            currentDeleteTimer = 0f;
                             objectToDelete = null;
+                            ResetHighlight();
                         }
                     }
                     else
@@ -608,13 +631,21 @@ public class Building : MonoBehaviour
                     objectToDelete = null;
                 }
             }
+            else
+            {
+                ResetHighlight(); // <- навели на не-удаляемый объект — сброс
+                objectToDelete = null;
+                currentDeleteTimer = 0f;
+            }
         }
         else
         {
+            ResetHighlight(); // <- ничего не попали — сброс
             currentDeleteTimer = 0f;
             objectToDelete = null;
         }
     }
+
 
 
     private bool ReturnItemToInventory(GameObject obj)
@@ -661,5 +692,95 @@ public class Building : MonoBehaviour
         }
         return null;
     }
+
+    private void HighlightObject(GameObject target)
+    {
+        if (target == lastHighlightedObject) return;
+
+        ResetHighlight(); // сбрасываем прошлый
+
+        Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer != null)
+            {
+                originalMaterials[renderer] = renderer.sharedMaterials;
+
+                Material[] highlightMats = new Material[renderer.sharedMaterials.Length];
+                for (int i = 0; i < highlightMats.Length; i++)
+                    highlightMats[i] = highlightMaterial;
+
+                renderer.materials = highlightMats;
+            }
+        }
+
+        lastHighlightedObject = target;
+    }
+
+    private void ResetHighlight()
+    {
+        foreach (var pair in originalMaterials)
+        {
+            if (pair.Key != null)
+                pair.Key.materials = pair.Value;
+        }
+
+        originalMaterials.Clear();
+        lastHighlightedObject = null;
+    }
+
+    private Coroutine deleteAnimCoroutine;
+
+    private void PlayDeleteAnimation(string animationName)
+    {
+        if (aimAnimator == null) return;
+
+        if (deleteAnimCoroutine != null)
+        {
+            StopCoroutine(deleteAnimCoroutine);
+        }
+
+        deleteAnimCoroutine = StartCoroutine(PlayAnimationCoroutine(animationName));
+    }
+
+    private IEnumerator PlayAnimationCoroutine(string animationName)
+    {
+        AnimationClip clip = null;
+        foreach (var c in aimAnimator.runtimeAnimatorController.animationClips)
+        {
+            if (c.name == animationName)
+            {
+                clip = c;
+                break;
+            }
+        }
+
+        if (clip == null)
+        {
+            Debug.LogWarning($"Animation clip '{animationName}' not found!");
+            yield break;
+        }
+
+        aimAnimator.speed = 1f;
+        aimAnimator.Play(animationName, 0, 0f);
+
+        yield return new WaitForSeconds(clip.length);
+
+        aimAnimator.speed = 0f;
+
+        if (animationName == "Delete")
+        {
+            // Оставляем на последнем кадре
+            aimAnimator.Play("DeleteDeactivation", 0, 1f);
+        }
+        else if (animationName == "DeleteDeactivation")
+        {
+            // Оставляем на последнем кадре анимации деактивации
+            aimAnimator.Play("Delete", 0, 1f);
+        }
+
+        deleteAnimCoroutine = null;
+    }
+
 
 }
