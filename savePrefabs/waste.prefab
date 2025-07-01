@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212abfd7a1440db4bbb9d4ceaadb418b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  index: 22
+  index: 19
 --- !u!95 &4937528645610406865
 Animator:
   serializedVersion: 7

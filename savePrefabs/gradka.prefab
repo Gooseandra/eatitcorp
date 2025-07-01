@@ -151,6 +151,7 @@ MonoBehaviour:
     icon: {fileID: -29136977, guid: dca4e15cf48cb294ba21e52754f7a9b1, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
     buildingIndex: 3
+    prefabIndex: 0
   amount: 1
   thisPrefab: {fileID: 7189806269866987338}
 --- !u!114 &301439870609797438
@@ -165,4 +166,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212abfd7a1440db4bbb9d4ceaadb418b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  index: 2
+  index: 6

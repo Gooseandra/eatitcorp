@@ -252,6 +252,24 @@ public class SaveManager : MonoBehaviour
             inv.LoadInventory(this);
         }
 
+        // Восстанавливаем thisPrefab у всех ItemPickup
+        foreach (var itemPickup in FindObjectsOfType<ItemPickup>())
+        {
+            if (itemPickup.item == null) continue;
+
+            GameObject prefab = GetPrefabByIndex(itemPickup.item.prefabIndex);
+            if (prefab != null)
+            {
+                itemPickup.thisPrefab = prefab;
+                itemPickup.item.thisPrefab = prefab;
+            }
+            else
+            {
+                Debug.LogWarning($"[SaveManager] Не найден префаб для prefabIndex = {itemPickup.item.prefabIndex}");
+            }
+        }
+
+
         Debug.Log("Scene loaded.");
     }
 

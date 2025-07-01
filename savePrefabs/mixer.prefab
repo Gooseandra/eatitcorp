@@ -484,6 +484,7 @@ MonoBehaviour:
     icon: {fileID: -925689059, guid: dcd549bc03408a64794c10f7ab4c2f09, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
     buildingIndex: 0
+    prefabIndex: 0
   amount: 1
   thisPrefab: {fileID: 7189806269866987338}
 --- !u!114 &-7475517033518500810
@@ -498,7 +499,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212abfd7a1440db4bbb9d4ceaadb418b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  index: 4
+  index: 12
 --- !u!4 &7533539320938632688 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
