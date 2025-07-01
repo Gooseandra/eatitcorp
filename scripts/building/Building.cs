@@ -50,16 +50,21 @@ public class Building : MonoBehaviour
     // Для хранения исходных материалов
     private GameObject lastHighlightedObject = null;
     private readonly Dictionary<Renderer, Material[]> originalMaterials = new();
+    private Dictionary<Renderer, Material[]> savedMaterials = new Dictionary<Renderer, Material[]>();
 
     [SerializeField] private GameObject aim;
     private Animator aimAnimator;
-    private bool isDeletingAnimPlaying = false;
 
+    [Header("Special Buildings")]
+    public GameObject Hub; // Индекс 7
+    public GameObject Elevator; // Индекс 6
 
     void Start()
     {
         aimAnimator = aim.GetComponent<Animator>();
         buildingPanel.SetActive(false);
+
+        Debug.Log($"Total buttons: {buildButtons.Length}");
 
         for (int i = 0; i < buildButtons.Length; i++)
         {
@@ -232,7 +237,67 @@ public class Building : MonoBehaviour
 
     void SelectPrefab(int index)
     {
-        // Проверяем наличие материалов перед созданием preview
+        Debug.Log($"SelectPrefab called with index: {index}");
+
+        // Для индекса 6 (Hub)
+        if (index == 6)
+        {
+            Debug.Log("Attempting to select Hub (index 6)");
+            if (Hub == null)
+            {
+                Debug.LogError("Hub prefab reference is null!");
+                return;
+            }
+
+            int inventoryIndex = inventory.FindByBuildingIndex(6);
+            Debug.Log($"Inventory index for Hub: {inventoryIndex}");
+
+            if (inventoryIndex == -1 || inventory.GetCountByIndex(inventoryIndex) <= 0)
+            {
+                Debug.Log("Not enough materials for Hub");
+                ManagerUI.ShowNotEnoughMaterialMessage();
+                return;
+            }
+
+            selectedPrefabIndex = 6;
+            SetupBuildingMode();
+            CreatePreviewObject(Hub);
+            return;
+        }
+
+        // Для индекса 7 (Elevator)
+        if (index == 7)
+        {
+            Debug.Log("Attempting to select Elevator (index 7)");
+            if (Elevator == null)
+            {
+                Debug.LogError("Elevator prefab reference is null!");
+                return;
+            }
+
+            int inventoryIndex = inventory.FindByBuildingIndex(7);
+            Debug.Log($"Inventory index for Elevator: {inventoryIndex}");
+
+            if (inventoryIndex == -1 || inventory.GetCountByIndex(inventoryIndex) <= 0)
+            {
+                Debug.Log("Not enough materials for Elevator");
+                ManagerUI.ShowNotEnoughMaterialMessage();
+                return;
+            }
+
+            selectedPrefabIndex = 7;
+            SetupBuildingMode();
+            CreatePreviewObject(Elevator);
+            return;
+        }
+
+        // Остальной код для обычных объектов (0-5)
+        if (index < 0 || index >= buildablePrefabs.Length)
+        {
+            Debug.LogError($"Invalid building index: {index}");
+            return;
+        }
+
         int hotbarIndex = inventory.FindByBuildingIndex(index);
         if (hotbarIndex == -1 || inventory.GetCountByIndex(hotbarIndex) <= 0)
         {
@@ -241,52 +306,80 @@ public class Building : MonoBehaviour
         }
 
         selectedPrefabIndex = index;
+        SetupBuildingMode();
+        CreatePreviewObject(buildablePrefabs[selectedPrefabIndex]);
 
+        // Специальная обработка для конвейера (если нужно)
+        if (selectedPrefabIndex == 1)
+        {
+            conveyorBackPoint = previewObject.transform.Find("BackPoint");
+            if (conveyorBackPoint != null)
+            {
+                conveyorBackPoint.SetParent(null);
+            }
+        }
+    }
+
+    private void SetupBuildingMode()
+    {
         input.SetBuildingMode(false);
         buildingPanel.SetActive(false);
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         playerMovement.lockCamera = false;
+    }
 
+    private void CreatePreviewObject(GameObject prefab)
+    {
         if (previewObject != null)
         {
             Destroy(previewObject);
         }
 
-        previewObject = Instantiate(buildablePrefabs[selectedPrefabIndex]);
-
-        if (selectedPrefabIndex == 1)
+        previewObject = Instantiate(prefab);
+        if (previewObject == null)
         {
-            conveyorBackPoint = previewObject.transform.Find("BackPoint");
-            conveyorBackPoint.SetParent(null);
+            Debug.LogError($"Failed to create preview for {prefab.name}");
+            return;
         }
+        previewObject.gameObject.tag = "Preview";
 
-        // Отключаем ВСЕ коллайдеры (обычные и триггеры)
+
+        // Отключаем все коллайдеры
         SetAllCollidersEnabled(previewObject, false);
 
-        // Применяем preview material
+        // Устанавливаем материал превью
         PreviewMaterial(previewObject, previewMaterial);
 
-        // Добавляем скрипт для обработки коллизий (если нужен)
+        // Добавляем скрипт для обработки коллизий
         AddCollisionScriptToPreview();
+
+        // Делаем все Rigidbody кинематическими (включая дочерние объекты)
+        SetAllRigidbodiesKinematic(previewObject, true);
+
+        Debug.Log($"Created preview for {prefab.name}");
+    }
+
+    // Новый метод для установки isKinematic всем Rigidbody (включая дочерние)
+    private void SetAllRigidbodiesKinematic(GameObject obj, bool isKinematic)
+    {
+        // Получаем все Rigidbody компоненты у объекта и его детей
+        Rigidbody[] rigidbodies = obj.GetComponentsInChildren<Rigidbody>(true);
+
+        foreach (Rigidbody rb in rigidbodies)
+        {
+            rb.isKinematic = isKinematic;
+            Debug.Log($"Set isKinematic = {isKinematic} for Rigidbody on {rb.gameObject.name}");
+        }
     }
 
     private void HandleBuilding()
     {
         // Проверяем наличие материалов перед строительством
         int hotbarIndex = inventory.FindByBuildingIndex(selectedPrefabIndex);
-        if (hotbarIndex == -1)
+        if (hotbarIndex == -1 || inventory.GetCountByIndex(hotbarIndex) <= 0)
         {
-            // Если материалы закончились - уничтожаем preview
-            DestroyPreviewObject();
-            return;
-        }
-
-        int materialsAmount = inventory.GetCountByIndex(hotbarIndex);
-        if (materialsAmount <= 0)
-        {
-            // Если материалы закончились - уничтожаем preview
+            // Если материалы закончились - уничтожаем preview и выходим из режима строительства
             DestroyPreviewObject();
             return;
         }
@@ -296,11 +389,11 @@ public class Building : MonoBehaviour
 
         if (selectedPrefabIndex == 1)
         {
-            HandleConveyorBuilding(hotbarIndex, materialsAmount);
+            HandleConveyorBuilding(hotbarIndex, inventory.GetCountByIndex(hotbarIndex));
         }
         else
         {
-            HandleGeneralBuilding(hotbarIndex, materialsAmount);
+            HandleGeneralBuilding(hotbarIndex, inventory.GetCountByIndex(hotbarIndex));
         }
     }
 
@@ -367,33 +460,78 @@ public class Building : MonoBehaviour
 
     private void HandleGeneralBuilding(int hotbarIndex, int materialsAmount)
     {
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
-        RaycastHit hit;
+        if (previewObject == null)
+        {
+            Debug.LogError("Preview object is null in HandleGeneralBuilding!");
+            return;
+        }
 
-        // Рисуем луч для визуализации в сцене (красный цвет)
+        Debug.Log($"Handling building for index {selectedPrefabIndex}");
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         Debug.DrawRay(ray.origin, ray.direction * maxBuildDistance, Color.red);
 
-        if (Physics.Raycast(ray, out hit, maxBuildDistance, buildableSurface))
+        if (Physics.Raycast(ray, out RaycastHit hit, maxBuildDistance, buildableSurface))
         {
-            bool isValidSurface = hit.collider.CompareTag("Buildable") && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground");
+            bool isValidSurface = false;
 
-            // Проверка ограничений для selectedPrefabIndex 4 и 5
-            Debug.Log(hit.collider.gameObject.layer);
-            if ((selectedPrefabIndex == 4 || selectedPrefabIndex == 5) && hit.collider.gameObject.layer != LayerMask.NameToLayer("Gradka"))
+            // Для специальных объектов (6 - Elevator, 7 - Hub) проверяем только Ground
+            if (selectedPrefabIndex == 6 || selectedPrefabIndex == 7)
             {
-                isValidSurface = false;
+                isValidSurface = hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground");
             }
+            // Для объектов 4 и 5 проверяем только слой Gradka
+            else if (selectedPrefabIndex == 4 || selectedPrefabIndex == 5)
+            {
+                isValidSurface = hit.collider.gameObject.layer == LayerMask.NameToLayer("Gradka");
+            }
+            // Для всех остальных объектов проверяем Ground с тегом Buildable
             else
             {
-                isValidSurface = true;
+                isValidSurface = hit.collider.CompareTag("Buildable") &&
+                               hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground");
             }
 
-            Vector3 position = hit.point;
-            position.y += GetLowestPointOffset(previewObject);
-            position.x = Mathf.Round(position.x / step) * step;
-            position.z = Mathf.Round(position.z / step) * step;
-            previewObject.transform.position = position;
+            Debug.Log($"Hit object layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)}, " +
+                     $"Tag: {hit.collider.tag}, isValidSurface: {isValidSurface}");
 
+            Vector3 position = hit.point;
+
+            // Для объекта с индексом 4 устанавливаем фиксированную высоту y = 2
+            if (selectedPrefabIndex == 4)
+            {
+                position.y = 2f; // Фиксированная высота
+                position.x = Mathf.Round(position.x / step) * step;
+                position.z = Mathf.Round(position.z / step) * step;
+            }
+            // Для Elevator (6) и Hub (7) используем точку пересечения с землей
+            else if (selectedPrefabIndex == 6 || selectedPrefabIndex == 7)
+            {
+                // Получаем нижнюю точку объекта
+                float bottomOffset = GetLowestPointOffset(previewObject);
+                position.y += bottomOffset;
+
+                // Округляем координаты
+                position.x = Mathf.Round(position.x / step) * step;
+                position.z = Mathf.Round(position.z / step) * step;
+
+                Debug.Log($"Setting position for special building. Bottom offset: {bottomOffset}, Final Y: {position.y}");
+            }
+            // Для остальных объектов используем стандартное смещение
+            else
+            {
+                position.y += GetLowestPointOffset(previewObject);
+                position.x = Mathf.Round(position.x / step) * step;
+                position.z = Mathf.Round(position.z / step) * step;
+            }
+
+            // Проверка на валидность позиции (особенно для Hub)
+            if (float.IsInfinity(position.y) || float.IsNaN(position.y))
+            {
+                Debug.LogError($"Invalid position calculated: {position}");
+                return;
+            }
+
+            previewObject.transform.position = position;
             PreviewMaterial(previewObject, isValidSurface ? previewMaterial : invalidMaterial);
 
             if (isValidSurface && Input.GetMouseButtonDown(0) && placedObjectsCount == 0 && materialsAmount > 0)
@@ -418,45 +556,75 @@ public class Building : MonoBehaviour
         SetAllCollidersEnabled(placedObject, true);
         RemoveCollisionScriptFromObject(placedObject);
 
-        Transform roadTransform = placedObject.transform.Find("road");
-
-        if (roadTransform != null)
+        ;
+        ConveyorSegment newSegment = placedObject.GetComponent<ConveyorSegment>();
+        if (newSegment == null)
         {
-            ConveyorSegment newSegment = roadTransform.GetComponent<ConveyorSegment>();
-
-            // Устанавливаем связь между сегментами
-            if (currentPointIndex == 0)
+            Transform roadTransform = placedObject.transform.Find("road");
+            newSegment = roadTransform.GetComponent<ConveyorSegment>();
+            if (newSegment == null)
             {
-                conveyorSegment.SetNextSegment(newSegment);
+                Debug.LogError("ConveyorSegment component not found on the placed object or its child!");
+                return;
             }
-            else
-            {
-                newSegment.SetNextSegment(conveyorSegment);
-            }
-
-            inventory.RemoveByIndex(hotbarIndex);
+        }
+        conveyorSegment.SetNextSegment(newSegment);
+        inventory.RemoveByIndex(hotbarIndex);
             SetAllCollidersEnabled(placedObject, true);
             SetTriggerEnabled(placedObject, false);
-        }
-        else
-        {
-            Debug.LogWarning("Объект с именем 'road' не найден среди дочерних объектов.");
-        }
+
     }
 
 
     void PlaceObject(Vector3 position, Quaternion rotation, int hotbarIndex)
     {
-        GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
-        placedObject.tag = "Placed";
-        DeleteWays(placedObject);
-        // Включаем только обычные коллайдеры (триггеры остаются выключенными)
-        SetAllCollidersEnabled(placedObject, true); // Обычные коллайдеры
-        SetTriggerEnabled(placedObject, false);  // Триггеры (если не нужны)
+        if (selectedPrefabIndex == 6) // Hub
+        {
+            if (Hub == null)
+            {
+                Debug.LogError("Hub reference is null!");
+                return;
+            }
 
-        // Возвращаем стандартные материалы (убираем preview)
+            SaveOriginalMaterials(Hub);
+            Hub.transform.position = position;
+            Hub.transform.rotation = rotation;
+            RestoreOriginalMaterials(Hub);
+            inventory.RemoveByIndex(hotbarIndex);
 
-        inventory.RemoveByIndex(hotbarIndex);
+        }
+        else if (selectedPrefabIndex == 7) // Elevator
+        {
+            if (Elevator == null)
+            {
+                Debug.LogError("Elevator reference is null!");
+                return;
+            }
+
+            SaveOriginalMaterials(Elevator);
+            Elevator.transform.position = position;
+            Elevator.transform.rotation = rotation;
+            RestoreOriginalMaterials(Elevator);
+            inventory.RemoveByIndex(hotbarIndex);
+
+        }
+        else
+        {
+            // Обычные объекты
+            GameObject placedObject = Instantiate(buildablePrefabs[selectedPrefabIndex], position, rotation);
+            if (placedObject == null)
+            {
+                Debug.LogError($"Failed to instantiate {buildablePrefabs[selectedPrefabIndex].name}");
+                return;
+            }
+
+            placedObject.tag = "Placed";
+            DeleteWays(placedObject);
+            SetAllCollidersEnabled(placedObject, true);
+            SetTriggerEnabled(placedObject, false);
+            inventory.RemoveByIndex(hotbarIndex);
+
+        }
     }
 
     void SetAllCollidersEnabled(GameObject obj, bool isEnabled)
@@ -782,5 +950,44 @@ public class Building : MonoBehaviour
         deleteAnimCoroutine = null;
     }
 
+    private void SaveOriginalMaterials(GameObject obj)
+    {
+        if (obj == null) return;
 
+        // Получаем все рендереры у объекта и его детей
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer != null && !savedMaterials.ContainsKey(renderer))
+            {
+                // Сохраняем копию оригинальных материалов
+                Material[] materialsCopy = new Material[renderer.sharedMaterials.Length];
+                System.Array.Copy(renderer.sharedMaterials, materialsCopy, renderer.sharedMaterials.Length);
+
+                savedMaterials[renderer] = materialsCopy;
+            }
+        }
+    }
+
+    // Восстанавливает оригинальные материалы из сохраненных
+    private void RestoreOriginalMaterials(GameObject obj)
+    {
+        if (obj == null) return;
+
+        // Получаем все рендереры у объекта и его детей
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer != null && savedMaterials.TryGetValue(renderer, out Material[] originalMaterials))
+            {
+                // Восстанавливаем материалы
+                renderer.materials = originalMaterials;
+            }
+        }
+
+        // Очищаем словарь после восстановления
+        savedMaterials.Clear();
+    }
 }

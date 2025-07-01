@@ -189,7 +189,7 @@ GameObject:
   - component: {fileID: 2959954126624546528}
   m_Layer: 6
   m_Name: conveir 1
-  m_TagString: Untagged
+  m_TagString: Placed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -316,6 +316,8 @@ MonoBehaviour:
   - {fileID: 187885175777641500}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 0.6
+  drawRay: 1
 --- !u!54 &4794388824705453975
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -4985626518432824100}
   m_Layer: 0
   m_Name: in_snap_point
-  m_TagString: Connnector
+  m_TagString: Placed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

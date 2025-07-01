@@ -431,7 +431,7 @@ GameObject:
   - component: {fileID: 3868034690472956172}
   m_Layer: 0
   m_Name: mixer (1)
-  m_TagString: Untagged
+  m_TagString: Placed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -623,7 +623,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fefe23dcd915974c9776d7e2d852ae9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inedibleWaste: {fileID: 718121586398424251, guid: abec0a71523d5e74094579f25b12ba20, type: 3}
+  inedibleWaste: {fileID: 718121586398424251, guid: a2e49c2b1771e194dafa33ba937a8627, type: 3}
   spawnPoint: {fileID: 7933929214056178774}
   maxIngridientsIn: 50
   ingACount: 0
@@ -929,6 +929,8 @@ MonoBehaviour:
   - {fileID: 5900778696891607068}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 1.1
+  drawRay: 1
 --- !u!54 &7298140568292756949
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3550,6 +3552,8 @@ MonoBehaviour:
   - {fileID: 6230231407635752871}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 1.1
+  drawRay: 1
 --- !u!54 &1613605732614040620
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5024,6 +5028,8 @@ MonoBehaviour:
   - {fileID: 1626720350402227588}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 1.1
+  drawRay: 1
 --- !u!54 &2195545060244588060
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5468,6 +5474,8 @@ MonoBehaviour:
   - {fileID: 582866552127406186}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 1.1
+  drawRay: 1
 --- !u!54 &5067913470275738662
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5995,6 +6003,8 @@ MonoBehaviour:
   - {fileID: 7609195253249241012}
   snapPoint: {fileID: 0}
   speed: 2
+  raycastDistance: 1.1
+  drawRay: 1
 --- !u!54 &8177328484857567002
 Rigidbody:
   m_ObjectHideFlags: 0

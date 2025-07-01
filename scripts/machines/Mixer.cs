@@ -26,6 +26,25 @@ public class Mixer : MonoBehaviour
     [SerializeField] private int ingACount = 0;
     [SerializeField] private int ingBCount = 0;
 
+
+    private void Start()
+    {
+        if (spawnPoint == null)
+        {
+            spawnPoint = transform.Find("spawn");
+        }
+
+        if (inedibleWaste == null)
+        {
+            inedibleWaste = Resources.Load<GameObject>("savePrefabs/waste");
+
+            if (inedibleWaste == null)
+            {
+                Debug.LogError("Не удалось загрузить inedibleWaste из Resources/savePrefabs/waste");
+            }
+        }
+    }
+
     public void HandleIngredient(Collider other)
     {
         Ingredient ingredient = other.GetComponent<Ingredient>();

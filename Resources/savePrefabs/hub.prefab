@@ -65,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 40a3a8f4fb2672145bb0118219bdc363, type: 2}
+  - {fileID: 2100000, guid: e4710fce711f2744a9326a34df4a843b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -173,7 +173,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b5055feb9010b0f45ac043b08a6c5d01, type: 2}
+  - {fileID: 2100000, guid: e4710fce711f2744a9326a34df4a843b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -281,7 +281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b5055feb9010b0f45ac043b08a6c5d01, type: 2}
+  - {fileID: 2100000, guid: e4710fce711f2744a9326a34df4a843b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -481,7 +481,7 @@ MonoBehaviour:
     name: "\u0425\u0410\u0411"
     maxStack: 1
     amount: 1
-    icon: {fileID: 1600608227, guid: 46998585f2a931342afea00f9102b76a, type: 3}
+    icon: {fileID: 1506263459, guid: 4a6a2e36d0642694dac24e7c75615033, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
     buildingIndex: 6
     prefabIndex: 31

@@ -12,12 +12,51 @@ public class ConveyorSegment : MonoBehaviour
     [SerializeField] Transform[] nextPoints;
     [SerializeField] private SnapPoint snapPoint;
     [SerializeField] private float speed = 0.5f;
+    [SerializeField] private float raycastDistance = 0.6f;
+    [SerializeField] private bool drawRay = true;
 
     private Dictionary<Rigidbody, Vector3> lastPositions = new();
+ 
 
     private void Start()
     {
         snapPoint = this.GetComponent<SnapPoint>();
+        if (waypoint == null)
+        {
+            waypoint = transform.Find("waypoint");
+        }
+        Invoke(nameof(DestroyWay), 0.1f);
+
+        FindNextSegment();
+    }
+
+
+    private void FindNextSegment()
+    {
+        // Создаем луч в направлении вперед относительно объекта
+        Vector3 rayDirection = transform.right;
+        Ray ray = new Ray(transform.position, rayDirection);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance))
+        {
+            ConveyorSegment hitSegment = hit.collider.GetComponent<ConveyorSegment>();
+
+            // Проверяем, что нашли сегмент и это не мы сами
+            if (hitSegment != null && hitSegment != this)
+            {
+                nextSegment = hitSegment;
+                Debug.Log($"Found next segment: {hitSegment.name}");
+            }
+        }
+    }
+
+    private void DestroyWay()
+    {
+        GameObject way = GameObject.Find("way");
+        if (way != null && this.gameObject.tag == "Placed")
+        {
+            way.SetActive(false);
+        }
     }
 
     private void OnCollisionStay(Collision collision)
@@ -76,7 +115,6 @@ public class ConveyorSegment : MonoBehaviour
             rb.linearVelocity = direction * speed;
         }
 
-        // 👇 Проталкивание по координатам
         if (!IsFrozen(rb) && !cm.IsStopped())
         {
             if (lastPositions.TryGetValue(rb, out Vector3 lastPos))
@@ -84,8 +122,7 @@ public class ConveyorSegment : MonoBehaviour
                 float movement = Vector3.Distance(rb.position, lastPos);
                 if (movement < 0.001f)
                 {
-                    rb.position += direction * 0.1f; // Маленький шаг вручную
-
+                    rb.position += direction * 0.1f;
                 }
             }
 

@@ -65,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 40a3a8f4fb2672145bb0118219bdc363, type: 2}
+  - {fileID: 2100000, guid: 2d2fa394f1824874680e7c62872a08ab, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -173,7 +173,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b5055feb9010b0f45ac043b08a6c5d01, type: 2}
+  - {fileID: 2100000, guid: 2d2fa394f1824874680e7c62872a08ab, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -281,7 +281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b5055feb9010b0f45ac043b08a6c5d01, type: 2}
+  - {fileID: 2100000, guid: 2d2fa394f1824874680e7c62872a08ab, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -481,7 +481,7 @@ MonoBehaviour:
     name: "\u041A\u043E\u0441\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043B\u0438\u0444\u0442"
     maxStack: 1
     amount: 1
-    icon: {fileID: 1600608227, guid: 46998585f2a931342afea00f9102b76a, type: 3}
+    icon: {fileID: -2007360845, guid: d697ac477be53774c93f0f387a58a798, type: 3}
     thisPrefab: {fileID: 7189806269866987338}
     buildingIndex: 7
     prefabIndex: 31
@@ -499,7 +499,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212abfd7a1440db4bbb9d4ceaadb418b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  index: 23
+  index: 24
 --- !u!4 &7533539320938632688 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a0e69e7db285f594da78211134e7a8c5, type: 3}
